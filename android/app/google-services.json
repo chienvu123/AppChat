@@ -1,0 +1,63 @@
+{
+  "project_info": {
+    "project_number": "155031640576",
+    "firebase_url": "https://appchat-65ca7.firebaseio.com",
+    "project_id": "appchat-65ca7",
+    "storage_bucket": "appchat-65ca7.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:155031640576:android:c944342b6652fc43",
+        "android_client_info": {
+          "package_name": "com.appchat"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "155031640576-vomp98k9241l8r286kt4757tv7nl3e1b.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.appchat",
+            "certificate_hash": "cab6b54c67eb4d7fdf764dbf1bf49ccf77d6c07b"
+          }
+        },
+        {
+          "client_id": "155031640576-tjr7t00p238jqp43h3lnupl4h6issdeo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.appchat",
+            "certificate_hash": "372a5f55dbaabdf8e7e7ef423fd2a060fcfdad4f"
+          }
+        },
+        {
+          "client_id": "155031640576-70s29uj44rhj5ubhf8blsjv3ve5tfujb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD_XtBT2zvjUaFeFJ0pNehRLpzLC1g8zxQ"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "155031640576-70s29uj44rhj5ubhf8blsjv3ve5tfujb.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
