@@ -2,11 +2,12 @@
  * @flow
  */
 import React from "react";
-import { Image, Text, View } from "react-native";
+import { ImageBackground, Text, View } from "react-native";
 import { createBottomTabNavigator, TabNavigator } from "react-navigation";
 import TabbarCustom from "components/Tabbar";
 import { colors, icons } from "../themes";
 import HomeStack from "../containers/Home";
+import Setting from "../containers/Setting";
 import { horizontalScale, verticalScale } from "../utilities/Tranform";
 
 const navigationOptions = ({ navigation }) => {
@@ -32,32 +33,45 @@ export default createBottomTabNavigator(
       screen: HomeStack,
       navigationOptions,
     },
+    Setting: {
+      screen: Setting,
+      navigationOptions,
+    },
   },
   {
     navigationOptions: ({ navigation }) => ({
       // eslint-disable-next-line
       tabBarIcon: ({ focused }) => {
         const { routeName } = navigation.state;
-        let iconBG;
-        if (routeName === "Home") {
-          iconBG = (
-            <View
-              style={{
-                flex: 1,
-                justifyContent: focused ? "flex-end" : "center",
-              }}
-            >
-              <Image
-                source={icons.home}
-                style={{
-                  width: focused ? 18 : 25,
-                  height: focused ? 18.7 : 25.95,
-                }}
-              />
-            </View>
-          );
+        let icon;
+        switch (routeName) {
+          case "Home":
+            icon = icons.home;
+            break;
+          case "Setting":
+            icon = icons.setting;
+            break;
+          default:
         }
-        return iconBG || null;
+        const iconBG = (
+          <View
+            style={{
+              flex: 1,
+              justifyContent: focused ? "flex-end" : "center",
+            }}
+          >
+            <ImageBackground
+              source={icon}
+              style={{
+                width: focused ? 18 : 25,
+                height: focused ? 18 : 25,
+              }}
+              resizeMethod="resize"
+              resizeMode="contain"
+            />
+          </View>
+        );
+        return iconBG;
       },
       // eslint-disable-next-line
       tabBarLabel: ({ focused }) => {
@@ -68,6 +82,7 @@ export default createBottomTabNavigator(
           lineHeight: verticalScale(22),
           fontSize: horizontalScale(11),
         };
+        console.log(routeName, focused);
         if (routeName === "Home") {
           if (focused) {
             return <Text style={style}>Trang chủ</Text>;
@@ -113,8 +128,6 @@ export default createBottomTabNavigator(
         left: 0,
         right: 0,
         bottom: 0,
-        borderTopLeftRadius: 15,
-        borderTopRightRadius: 15,
       },
       tabStyle: {
         backgroundColor: "transparent",

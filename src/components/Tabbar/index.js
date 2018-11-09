@@ -66,11 +66,11 @@ class Tabbar extends PureComponent<Props> {
     }).start();
   };
   keyboardWillShow = () => {
-    this.changeStateTabbar(heightTabbar);
+    this.changeStateTabbar(0);
   };
 
   keyboardWillHide = () => {
-    this.changeStateTabbar(0);
+    this.changeStateTabbar(heightTabbar);
   };
 
   render() {

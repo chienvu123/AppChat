@@ -6,6 +6,7 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
+  KeyboardAvoidingView,
 } from "react-native";
 import { connect } from "react-redux";
 import firebase from "react-native-firebase";
@@ -38,83 +39,107 @@ class Signup extends PureComponent<Props, State> {
       messageComfirm: "",
     };
     this.comfirmCode = "-1";
+    this.verificationId = "";
   }
-  /* eslint-disable */
-
-  /* eslint-enable */
-  verify = () => {
-    // const { comfirmCode } = this.state;
-    const { comfirmCode } = this;
-    console.log(this.codeInput, comfirmCode);
-    if (comfirmCode && this.codeInput) {
-      this.setState(
-        {
-          isComfirm: true,
-        },
-        async () => {
-          if (comfirmCode === this.codeInput) {
-            await firebase
-              .auth()
-              .createUserAndRetrieveDataWithEmailAndPassword(
-                `${this.tmpPhone}@gmail.com`,
-                this.passwordText,
-              )
-              .then((user) => {
-                const tokenId = user.user.getIdToken();
-                const tmp = {
-                  id: user.user.uid,
-                  phone: this.tmpPhone,
-                  photoUrl: "",
-                  createtime: user.user.metadata.creationTime,
-                  name: this.phoneText,
-                  account: this.tmpPhone,
-                  followed: [""],
-                  following: [""],
-                  gender: this.genText,
-                  address: this.addressText,
-                };
-                this.user = tmp;
-                this.modalVerify.close();
-                this.props.setUser(tmp, tokenId, true);
-                this.props.navigation.navigate("Home");
-              })
-              .catch((error) => {
-                this.setState(
-                  {
-                    isComfirm: false,
-                  },
-                  () => {
-                    const { code } = error;
-                    console.log("error verifier: ", error);
-                    const message = checkErrorCode(code);
-                    this.setState(
-                      {
-                        message,
-                      },
-                      () => {
-                        this.modalVerify.close();
-                      },
-                    );
-                  },
-                );
-              });
-            this.setState({
-              isComfirm: false,
-            });
-          } else {
-            this.setState({
-              messageComfirm: "Mã xác nhận không đúng",
-              isComfirm: false,
-            });
-          }
-        },
+  otherPhoneVerify = () => {
+    const { codeInput } = this;
+    if (codeInput) {
+      const credential = firebase.auth.PhoneAuthProvider.credential(
+        this.verificationId,
+        codeInput,
       );
+      firebase
+        .auth()
+        .signInAndRetrieveDataWithCredential(credential)
+        .then((snapshot) => {
+          this.createUser(snapshot);
+        })
+        .catch((error) => {
+          console.log("otherPhone error: ", error);
+        });
     } else {
       this.setState({
         messageComfirm: "Bạn cần phải nhập mã xác nhận",
         isComfirm: false,
       });
     }
+  };
+  createUser = async (user) => {
+    console.log("success: ", user);
+    const tokenId = await user.user.getIdToken();
+    const tmp = {
+      id: user.user.uid,
+      phone: this.tmpPhone,
+      photoUrl: "",
+      createtime: user.user.metadata.creationTime,
+      name: this.phoneText,
+      account: this.tmpPhone,
+      followed: [""],
+      following: [""],
+      gender: this.genText,
+      address: this.addressText,
+    };
+    this.user = tmp;
+    this.modalVerify.close();
+    this.props.setUser(tmp, tokenId, true);
+    this.props.navigation.navigate("Home");
+  };
+  verify = async (isVerified = false) => {
+    // const { comfirmCode } = this.state;
+    if (isVerified !== true) {
+      // máy điện thoại khác
+      this.otherPhoneVerify();
+    } else {
+      await firebase
+        .auth()
+        .createUserAndRetrieveDataWithEmailAndPassword(
+          `${this.tmpPhone}@gmail.com`,
+          this.passwordText,
+        )
+        .then((user) => {
+          this.createUser(user);
+        })
+        .catch((error) => {
+          this.setState(
+            {
+              isComfirm: false,
+            },
+            () => {
+              const { code } = error;
+              console.log("error verifier: ", error);
+              const message = checkErrorCode(code);
+              this.setState(
+                {
+                  message,
+                },
+                () => {
+                  this.modalVerify.close();
+                },
+              );
+            },
+          );
+        });
+      this.setState({
+        isComfirm: false,
+      });
+    }
+
+    // if (comfirmCode && this.codeInput) {
+    //   this.setState(
+    //     {
+    //       isComfirm: true,
+    //     },
+    //     async () => {
+    //       if (comfirmCode === this.codeInput) {
+    //       } else {
+    //         this.setState({
+    //           messageComfirm: "Mã xác nhận không đúng",
+    //           isComfirm: false,
+    //         });
+    //       }
+    //     },
+    //   );
+    // }
   };
   phoneText: string;
   tmpPhone: string;
@@ -133,11 +158,12 @@ class Signup extends PureComponent<Props, State> {
         firebase.auth().languageCode = "vi";
         await firebase
           .auth()
-          .verifyPhoneNumber(this.tmpPhone)
+          .verifyPhoneNumber(this.tmpPhone, 60, true)
           .on(
             "state_changed",
-            async ({ state, code, error }) => {
-              console.log(state, code, error);
+            async (snapshot) => {
+              const { state, code, error } = snapshot;
+              console.log(snapshot);
               switch (state) {
                 case firebase.auth.PhoneAuthState.CODE_SENT:
                   this.setState(
@@ -145,7 +171,7 @@ class Signup extends PureComponent<Props, State> {
                       isSignup: false,
                     },
                     () => {
-                      this.comfirmCode = code;
+                      this.verificationId = snapshot.verificationId;
                       this.modalVerify.open();
                     },
                   );
@@ -170,9 +196,9 @@ class Signup extends PureComponent<Props, State> {
                   break;
                 case firebase.auth.PhoneAuthState.AUTO_VERIFIED:
                   console.log("auto");
-                  this.comfirmCode = code;
+                  // this.comfirmCode = code;
                   this.codeInput = code;
-                  this.verify();
+                  this.verify(true);
                   break;
                 default:
                   console.log(state);
@@ -180,6 +206,10 @@ class Signup extends PureComponent<Props, State> {
             },
             (error) => {
               console.log("send code error: ", error);
+            },
+            (snapshot) => {
+              // this.comfirmCode = snapshot.code;
+              console.log("success: ", snapshot);
             },
           );
       },
@@ -231,7 +261,7 @@ class Signup extends PureComponent<Props, State> {
           style={{ width: "100%", height: "100%" }}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={style.form}>
+          <KeyboardAvoidingView style={style.form} behavior="padding">
             <Custom.TextInput
               ref={(phone) => {
                 this.phone = phone;
@@ -341,7 +371,7 @@ class Signup extends PureComponent<Props, State> {
                 ĐĂNG NHẬP
               </Custom.Text>
             </View>
-          </View>
+          </KeyboardAvoidingView>
         </ScrollView>
         <Custom.Modal
           ref={(modal) => {
@@ -357,7 +387,7 @@ class Signup extends PureComponent<Props, State> {
             placeholder="Nhập mã vào đây ..."
             style={style.inputModal}
             underlineColorAndroid="transparent"
-            value={this.codeInput}
+            defaultValue={this.codeInput}
             onChangeText={(text) => {
               this.codeInput = text;
             }}
@@ -379,9 +409,7 @@ class Signup extends PureComponent<Props, State> {
             {this.state.isComfirm ? (
               <ActivityIndicator size="small" color={colors.white} />
             ) : (
-              <Custom.Text style={style.txtBtnModal} onPress={this.verify}>
-                Tiếp tục
-              </Custom.Text>
+              <Custom.Text style={style.txtBtnModal}>Tiếp tục</Custom.Text>
             )}
           </TouchableOpacity>
         </Custom.Modal>

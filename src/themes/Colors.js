@@ -18,10 +18,10 @@ const colors = {
   // Search screen
   searchType1: "#665eff",
   searchType2: "#3497fd",
-  searchType3: "#4fcbcc",
+  synch: "#4fcbcc",
   searchType4: "#c840e9",
   searchType5: "#ff4f9a",
-  searchType6: "#ff9057",
+  warning: "#ff9057",
   searchSwiperBg: "#2a2e43",
   searchItemBg: "#353a50",
 };

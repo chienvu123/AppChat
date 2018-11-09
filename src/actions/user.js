@@ -29,6 +29,7 @@ class Instance {
       lastLogin,
     };
     try {
+      console.log(token);
       if (token) {
         AsyncStorage.setItem("tokenLogin", token);
       }

@@ -39,3 +39,13 @@ export type CommentData = {
   user: User,
   content: string, // url download
 };
+
+export type Who = {
+  createtime: number,
+  userId: string,
+};
+
+export type What = {
+  userId: string,
+  content: string,
+};
