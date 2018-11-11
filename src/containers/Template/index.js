@@ -1,12 +1,13 @@
 import React, { PureComponent } from "react";
 import { View, Text } from "react-native";
 import { connect } from "react-redux";
+import { Header } from "components/CustomComponent";
 
 type Props = {
   navigation: Object,
 };
 
-class Setting extends PureComponent<Props> {
+class Template extends PureComponent<Props> {
   constructor(props) {
     super(props);
     this.state = {};
@@ -15,10 +16,13 @@ class Setting extends PureComponent<Props> {
   render() {
     return (
       <View style={{ flex: 1, backgroundColor: "#FFF" }}>
-        <Text>EditText Screen</Text>
+        <Header
+          onLeftPress={() => this.props.navigation.goBack()}
+          center="Mẫu in"
+        />
       </View>
     );
   }
 }
 
-export default connect()(Setting);
+export default connect()(Template);

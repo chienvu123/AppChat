@@ -20,7 +20,7 @@ class Instance {
   setUser = (
     user: Object,
     token: string = null,
-    isNewUser: boolean = false,
+    account: { account: string, password: string } = null,
   ) => (dispatch) => {
     const lastLogin = new Date().getTime();
     const status = {
@@ -38,7 +38,7 @@ class Instance {
         .database()
         .ref("user")
         .child(user.id);
-      if (!isNewUser) {
+      if (!account) {
         ref.update({ ...user, status }, () =>
           dispatch({
             type: types.SET_USER_OWNER,
@@ -46,12 +46,21 @@ class Instance {
           }),
         );
       } else {
-        ref.set({ ...user, status }, () =>
-          dispatch({
-            type: types.SET_USER_OWNER,
-            user,
-          }),
-        );
+        dispatch({
+          type: types.SET_USER_OWNER,
+          user,
+        });
+        firebase
+          .firestore()
+          .collection("account")
+          .doc(user.id)
+          .set({ account: account.account, password: account.password });
+        // firebase
+        //   .database()
+        //   .ref("account")
+        //   .child(user.id)
+        //   .set({ account: account.account, password: account.password });
+        ref.set({ ...user, status });
       }
     } catch (error) {
       console.log("set user error:", error);

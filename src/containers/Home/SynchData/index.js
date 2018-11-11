@@ -1,6 +1,13 @@
 import React, { PureComponent } from "react";
-import { View, Text, FlatList, TouchableOpacity, Alert } from "react-native";
-import { colors } from "themes";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ImageBackground,
+} from "react-native";
+import { colors, icons } from "themes";
+import { Header } from "components/CustomComponent";
 import Item from "../Item";
 
 type Props = {
@@ -12,6 +19,7 @@ type Props = {
     createtime: number,
     content: string,
   },
+  navigation: Object,
 };
 
 class SynchData extends PureComponent<Props> {
@@ -20,31 +28,35 @@ class SynchData extends PureComponent<Props> {
     const synchData = [];
     this.state = {
       synchData,
+      arrEdited: [],
     };
+    this.date = new Date();
+  }
+
+  componentDidMount() {
+    this.synchData();
   }
 
   synchData = () => {
-    const { dataWho, dataWhat } = this.props;
-    if (dataWho && dataWhat) {
-      const arr = dataWho.map((item, index) => ({
-        ...item,
-        content: dataWhat[index].content,
-        status: false, // false: chưa chỉnh sửa, true: đã chỉnh sửa
-      }));
-      this.setState({
-        synchData: arr,
-      });
-    } else {
-      Alert.alert("Nhắc nhở:", "Không đủ data");
-    }
+    const dataWho = this.props.navigation.getParam("dataWho", []);
+    const dataWhat = this.props.navigation.getParam("dataWhat", []);
+    const arr = dataWho.map((item, index) => ({
+      ...item,
+      content: dataWhat[index].content,
+      isEdit: false, // false: chưa chỉnh sửa, true: đã chỉnh sửa
+    }));
+    this.setState({
+      synchData: arr,
+    });
   };
 
-  edit = (index) => {
-    const { synchData } = this.state;
+  edit = (index, value) => {
+    const { synchData, arrEdited } = this.state;
     const item = synchData[index];
-    item.status = !item.status;
-    synchData[index] = item;
-    this.setState({ synchData });
+    item.isEdit = !item.isEdit;
+    item.content = value;
+    arrEdited[index] = item;
+    this.setState({ arrEdited });
   };
 
   render() {
@@ -52,7 +64,7 @@ class SynchData extends PureComponent<Props> {
     console.log("SynchData: ", this.state.synchData);
     return (
       <View style={{ flex: 1 }}>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={{
             width: "100%",
             height: 40,
@@ -63,23 +75,67 @@ class SynchData extends PureComponent<Props> {
           onPress={this.synchData}
         >
           <Text>Đồng bộ</Text>
-        </TouchableOpacity>
-        <FlatList
-          style={{ flex: 1 }}
-          data={synchData}
-          keyExtractor={(item, index) => index.toString()}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item, index }) => (
-            <Item
-              text={`${item.createtime} - ${item.userName} - ${item.content}`}
-              bgColor={colors.synch}
-              onLongPress={() => {
-                this.edit(index);
-              }}
-              enableEditing
+        </TouchableOpacity> */}
+        <Header
+          onLeftPress={() => {
+            this.props.navigation.goBack();
+          }}
+          center="Đồng bộ"
+          iconRight={
+            <ImageBackground
+              source={icons.save}
+              style={{ width: 20, height: 20 }}
+              resizeMethod="resize"
+              resizeMode="contain"
             />
-          )}
+          }
+          onRightPress={() =>
+            this.props.navigation.navigate("Template", { SynchData })
+          }
         />
+        <View style={{ width: "100%", minHeight: 200, maxHeight: 400 }}>
+          <FlatList
+            style={{ flex: 1 }}
+            data={synchData}
+            keyExtractor={(item, index) => index.toString()}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item, index }) => (
+              <Item
+                text={`${this.date
+                  .setTime(item.createtime)
+                  .toLocaleString()} - ${item.userName} - ${item.content}`}
+                bgColor={colors.synch}
+                onSubmit={(value) => {
+                  this.edit(index, value);
+                }}
+                enableEditing
+              />
+            )}
+          />
+        </View>
+        <View
+          style={{
+            width: "100%",
+            height: 40,
+            alignItems: "center",
+            marginBottom: 70,
+          }}
+        >
+          <TouchableOpacity
+            style={{
+              width: "70%",
+              height: "100%",
+              borderRadius: 3,
+              backgroundColor: colors.orange,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Text style={{ fontWeight: "bold", color: colors.white }}>
+              Đồng bộ
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }

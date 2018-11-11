@@ -6,6 +6,7 @@ const icons = {
   home: require("../../assets/icons/home.png"),
   backWhite: require("../../assets/icons/backWhite.png"),
   backBlack: require("../../assets/icons/back.png"),
+  save: require("../../assets/icons/save.png"),
 };
 
 export default icons;

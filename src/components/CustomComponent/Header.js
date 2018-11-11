@@ -5,6 +5,7 @@ import {
   View,
   ImageBackground,
   Animated,
+  Text,
 } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
 import { colors, icons } from "themes";
@@ -52,6 +53,7 @@ const styles = StyleSheet.create({
     zIndex: 50,
     elevation: 20,
     height: header,
+    marginBottom: 10,
   },
 });
 
@@ -101,11 +103,31 @@ export default class Index extends PureComponent<Props> {
           style={styles.container}
         >
           {/* <View style={styles.container}> */}
-          <TouchableOpacity onPress={onLeftPress} style={styles.left}>
+          <TouchableOpacity
+            onPress={onLeftPress}
+            style={styles.left}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
             {iconLeft}
           </TouchableOpacity>
-          <View style={styles.center}>{center}</View>
-          <TouchableOpacity onPress={onRightPress} style={styles.right}>
+          <View style={styles.center}>
+            <Text
+              style={{ fontWeight: "bold", color: colors.white, fontSize: 15 }}
+              numberOfLines={1}
+            >
+              {center}
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={onRightPress}
+            style={styles.right}
+            hitSlop={{
+              top: 10,
+              bottom: 10,
+              left: 10,
+              right: 10,
+            }}
+          >
             {iconRight}
           </TouchableOpacity>
           {/* </View> */}

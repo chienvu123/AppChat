@@ -73,7 +73,6 @@ class Signup extends PureComponent<Props, State> {
       photoUrl: "",
       createtime: user.user.metadata.creationTime,
       name: this.phoneText,
-      account: this.tmpPhone,
       followed: [""],
       following: [""],
       gender: this.genText,
@@ -81,7 +80,10 @@ class Signup extends PureComponent<Props, State> {
     };
     this.user = tmp;
     this.modalVerify.close();
-    this.props.setUser(tmp, tokenId, true);
+    this.props.setUser(tmp, tokenId, {
+      account: this.tmpPhone,
+      password: this.passwordText,
+    });
     this.props.navigation.navigate("Home");
   };
   verify = async (isVerified = false) => {

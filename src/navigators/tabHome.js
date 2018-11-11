@@ -122,17 +122,17 @@ export default createBottomTabNavigator(
       scrollEnabled: true,
       style: {
         backgroundColor: "transparent",
-        borderTopWidth: 0,
-        height: verticalScale(48),
-        position: "absolute",
-        left: 0,
-        right: 0,
-        bottom: 0,
+        // borderTopWidth: 0,
+        // height: verticalScale(48),
+        // position: "absolute",
+        // left: 0,
+        // right: 0,
+        // bottom: 0,
       },
-      tabStyle: {
-        backgroundColor: "transparent",
-        alignItems: "center",
-      },
+      // tabStyle: {
+      //   backgroundColor: "transparent",
+      //   alignItems: "center",
+      // },
     },
   },
 );

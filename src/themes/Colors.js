@@ -14,7 +14,7 @@ const colors = {
   textShadow: "rgba(0,0,0,0.4)",
   border: "#E8E8E8",
   borderGallery: "#76ff03",
-
+  orange: "#fb8c00",
   // Search screen
   searchType1: "#665eff",
   searchType2: "#3497fd",

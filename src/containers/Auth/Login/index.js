@@ -14,16 +14,11 @@ import { images, icons, colors } from "themes";
 import * as Custom from "components/CustomComponent";
 import UserModel from "actions/user";
 import style from "./style";
-import {
-  checkInputLogin,
-  checkErrorCode,
-  convertPhoneNumber11to10,
-} from "../check";
+import { checkInputLogin, convertPhoneNumber11to10 } from "../check";
 
 type Props = {
   navigation: Object,
-  setUser: Function,
-  location: Function,
+  // setUser: Function,
 };
 
 class Index extends PureComponent<Props> {
@@ -52,40 +47,53 @@ class Index extends PureComponent<Props> {
     if (result) {
       this.phoneText = convertPhoneNumber11to10(this.phoneText);
       firebase
-        .auth()
-        .signInAndRetrieveDataWithEmailAndPassword(
-          `${this.phoneText}@gmail.com`,
-          this.passwordText,
-        )
-        .then(async (user) => {
-          try {
-            const token = firebase.auth().currentUser.getIdToken();
-            console.log(token);
-            const child = firebase
-              .database()
-              .ref("user")
-              .child(user.user.uid);
-            const tmp = await child.once("value");
-            this.props.setUser(
-              {
-                ...tmp.val(),
-                currentLocation: this.props.location,
-              },
-              token,
-            );
-            this.props.navigation.navigate("Home");
-          } catch (error) {
-            console.log("login error: ", error);
-          }
+        .firestore()
+        .collection("account")
+        .where("account", "=", this.phoneText)
+        .where("password", "=", this.passwordText)
+        .get()
+        .then((snapshot) => {
+          console.log("login success: ", snapshot);
+          this.props.navigation.navigate("Home");
         })
         .catch((error) => {
-          const { code } = error;
-          const messageCheck = checkErrorCode(code);
-          this.setState({
-            message: messageCheck,
-            isLogin: false,
-          });
+          console.log("error login: ", error);
         });
+      // firebase
+      //   .auth()
+      //   .signInAndRetrieveDataWithEmailAndPassword(
+      //     `${this.phoneText}@gmail.com`,
+      //     this.passwordText,
+      //   )
+      //   .then(async (user) => {
+      //     try {
+      //       const token = firebase.auth().currentUser.getIdToken();
+      //       console.log(token);
+      //       const child = firebase
+      //         .database()
+      //         .ref("user")
+      //         .child(user.user.uid);
+      //       const tmp = await child.once("value");
+      //       this.props.setUser(
+      //         {
+      //           ...tmp.val(),
+      //           currentLocation: this.props.location,
+      //         },
+      //         token,
+      //       );
+      //       this.props.navigation.navigate("Home");
+      //     } catch (error) {
+      //       console.log("login error: ", error);
+      //     }
+      //   })
+      //   .catch((error) => {
+      //     const { code } = error;
+      //     const messageCheck = checkErrorCode(code);
+      //     this.setState({
+      //       message: messageCheck,
+      //       isLogin: false,
+      //     });
+      //   });
     } else {
       this.setState({
         message,

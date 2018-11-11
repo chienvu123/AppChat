@@ -11,17 +11,31 @@ import FilePickerManager from "react-native-file-picker";
 import RNFS from "react-native-fs";
 import { colors } from "themes";
 import Item from "../Item";
-import SynchData from "../SynchData";
+// import SynchData from "../SynchData";
 
-class Home extends PureComponent<> {
+type Props = {
+  navigation: Object,
+};
+
+class Home extends PureComponent<Props> {
   constructor(props) {
     super(props);
     this.state = {};
     this.who = {};
     this.what = {};
+    this.date = new Date();
   }
 
-  componentDidMount() {}
+  componentDidMount() {
+    this.props.navigation.setParams({ scrollToTop: this.handleBackPress });
+  }
+  handleBackPress = () => {
+    if (this.offset > 20) {
+      this.scrollView.scrollTo({ y: 0, x: 0, animated: true });
+      return true;
+    }
+    return false;
+  };
   selectFile = (fileName: string) => {
     FilePickerManager.showFilePicker(null, (response) => {
       if (response.didCancel) {
@@ -73,101 +87,175 @@ class Home extends PureComponent<> {
     });
   };
 
+  editItem = (index, value) => {
+    console.log(index, value);
+  };
+
   render() {
     const { who, what } = this.state;
     return (
-      <View
+      <ScrollView
+        ref={(node) => {
+          this.scrollView = node;
+        }}
         style={{
           flex: 1,
         }}
+        onScroll={(e) => {
+          this.offset = e.nativeEvent.contentOffset.y;
+        }}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={{ flex: 1 }}>
-          <View
-            style={{
-              flexDirection: "row",
-              width: "100%",
-              height: 40,
-              borderBottomColor: colors.searchType2,
-              borderBottomWidth: 1,
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => {
-                this.selectFile("who");
-              }}
-              style={{
-                flex: 1,
-                height: "100%",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: colors.default,
-              }}
-            >
-              <Text style={{ fontWeight: "bold", color: colors.white }}>
-                File Who
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                this.selectFile("what");
-              }}
-              style={{
-                flex: 1,
-                height: "100%",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: colors.default,
-              }}
-            >
-              <Text style={{ fontWeight: "bold", color: colors.white }}>
-                File What
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView
-            style={{
-              flex: 1,
-            }}
-          >
-            <View style={{ flex: 1, flexDirection: "row" }}>
-              <View style={{ flex: 1 }}>
-                {who ? (
-                  <FlatList
-                    data={who}
-                    renderItem={({ item }) => (
-                      <Item
-                        text={`${item.createtime} - ${item.userName}`}
-                        bgColor={colors.default}
-                      />
-                    )}
-                    keyExtractor={(item, index) => index.toString()}
-                  />
-                ) : null}
-              </View>
-              <View style={{ flex: 1 }}>
-                {what ? (
-                  <FlatList
-                    data={what}
-                    renderItem={({ item }) => (
-                      <Item
-                        text={`${item.createtime} - ${item.content}`}
-                        bgColor={colors.defaultOpacity}
-                      />
-                    )}
-                    keyExtractor={(item, index) => index.toString()}
-                  />
-                ) : null}
-              </View>
-            </View>
-          </ScrollView>
+        <TouchableOpacity
+          onPress={() => {
+            this.selectFile("who");
+          }}
+          style={{
+            height: 40,
+            width: "100%",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: colors.default,
+            marginBottom: 10,
+          }}
+        >
+          <Text style={{ fontWeight: "bold", color: colors.white }}>
+            File Who
+          </Text>
+        </TouchableOpacity>
+        <View style={{ width: "100%", height: 350 }}>
+          {who ? (
+            <FlatList
+              data={who}
+              renderItem={({ item }) => (
+                <Item
+                  text={`${this.date
+                    .setTime(item.createtime)
+                    .toLocaleString()} - ${item.userName}`}
+                  bgColor={colors.defaultOpacity}
+                />
+              )}
+              keyExtractor={(item, index) => index.toString()}
+            />
+          ) : null}
         </View>
-        <View style={{ flex: 1 }}>
+        <TouchableOpacity
+          onPress={() => {
+            this.selectFile("what");
+          }}
+          style={{
+            height: 40,
+            width: "100%",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: colors.default,
+            marginBottom: 10,
+            marginTop: 10,
+          }}
+        >
+          <Text style={{ fontWeight: "bold", color: colors.white }}>
+            File What
+          </Text>
+        </TouchableOpacity>
+        <View style={{ width: "100%", height: 350 }}>
+          {what ? (
+            <FlatList
+              style={{ width: "100%", height: 400 }}
+              data={what}
+              renderItem={({ item }) => (
+                <Item
+                  text={`${this.date
+                    .setTime(item.createtime)
+                    .toLocaleString()} - ${item.content}`}
+                  bgColor={colors.defaultOpacity}
+                />
+              )}
+              keyExtractor={(item, index) => index.toString()}
+            />
+          ) : null}
+        </View>
+        <View
+          style={{
+            width: "100%",
+            height: 40,
+            alignItems: "center",
+            marginBottom: 70,
+          }}
+        >
+          <TouchableOpacity
+            style={{
+              width: "70%",
+              height: "100%",
+              borderRadius: 3,
+              backgroundColor: colors.orange,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onPress={() => {
+              if (who && what && who.length === what.length) {
+                this.props.navigation.navigate("SynchData", {
+                  dataWho: who,
+                  dataWhat: what,
+                  onEditItem: this.editItem,
+                });
+              } else {
+                Alert.alert("Nhắc nhở:", "Không đủ data");
+              }
+            }}
+          >
+            <Text style={{ fontWeight: "bold", color: colors.white }}>
+              Đồng bộ
+            </Text>
+          </TouchableOpacity>
+        </View>
+        {/* <View style={{ flex: 1 }}>
           <SynchData dataWho={who} dataWhat={what} />
-        </View>
-      </View>
+        </View> */}
+      </ScrollView>
     );
   }
 }
 
 export default Home;
+/*
+<ScrollView
+          style={{
+            flex: 1,
+          }}
+        >
+          <View style={{ flex: 1, flexDirection: "row" }}>
+            <View style={{ flex: 1 }}>
+              {who ? (
+                <FlatList
+                  data={who}
+                  renderItem={({ item }) => (
+                    <Item
+                      text={`${this.date
+                        .setTime(item.createtime)
+                        .toLocaleString()} - ${item.userName}`}
+                      bgColor={colors.default}
+                    />
+                  )}
+                  keyExtractor={(item, index) => index.toString()}
+                />
+              ) : null}
+            </View>
+            <View style={{ flex: 1 }}>
+              {what ? (
+                <FlatList
+                  data={what}
+                  renderItem={({ item }) => (
+                    <Item
+                      text={`${this.date
+                        .setTime(item.createtime)
+                        .toLocaleString()} - ${item.content}`}
+                      bgColor={colors.defaultOpacity}
+                    />
+                  )}
+                  keyExtractor={(item, index) => index.toString()}
+                />
+              ) : null}
+            </View>
+          </View>
+        </ScrollView>
+*/
