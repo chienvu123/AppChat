@@ -20,7 +20,10 @@ class Instance {
   setUser = (
     user: Object,
     token: string = null,
-    account: { account: string, password: string } = null,
+    account: {
+      account: string,
+      password: string,
+    } = null,
   ) => (dispatch) => {
     const lastLogin = new Date().getTime();
     const status = {
@@ -29,38 +32,33 @@ class Instance {
       lastLogin,
     };
     try {
-      console.log(token);
       if (token) {
         AsyncStorage.setItem("tokenLogin", token);
       }
       AsyncStorage.setItem("userId", user.id);
-      const ref = firebase
-        .database()
-        .ref("user")
-        .child(user.id);
+      dispatch({
+        type: types.SET_USER_OWNER,
+        user,
+      });
+      const refAccount = firebase
+        .firestore()
+        .collection("account")
+        .doc(user.id);
+      const refUser = firebase
+        .firestore()
+        .collection("users")
+        .doc(user.id);
       if (!account) {
-        ref.update({ ...user, status }, () =>
-          dispatch({
-            type: types.SET_USER_OWNER,
-            user,
-          }),
-        );
+        refAccount.update({ status });
+
+        // refUser.update({ ...user, status });
       } else {
-        dispatch({
-          type: types.SET_USER_OWNER,
-          user,
+        refAccount.set({
+          account: account.account,
+          password: account.password,
+          status,
         });
-        firebase
-          .firestore()
-          .collection("account")
-          .doc(user.id)
-          .set({ account: account.account, password: account.password });
-        // firebase
-        //   .database()
-        //   .ref("account")
-        //   .child(user.id)
-        //   .set({ account: account.account, password: account.password });
-        ref.set({ ...user, status });
+        refUser.set(user);
       }
     } catch (error) {
       console.log("set user error:", error);
@@ -72,11 +70,13 @@ class Instance {
       let user: User = this.arrUser[userId];
       if (!user) {
         const child = firebase
-          .database()
-          .ref("user")
-          .child(userId);
-        const snapshot = await child.once("value");
-        user = snapshot.val();
+          .firestore()
+          .collection("users")
+          .doc(userId);
+        const value = await child.get();
+        user = value.data();
+        // const snapshot = await child.once("value");
+        // user = snapshot.val();
         this.arrUser[userId] = user;
       }
       return user;
@@ -85,7 +85,36 @@ class Instance {
       return null;
     }
   };
-
+  logIn = async (
+    input: {
+      phoneNumber: string,
+      password: string,
+    },
+    success = (user: User, tokenId: string) => {},
+    errorCallback = (error) => {},
+  ) => {
+    firebase
+      .auth()
+      .signInAndRetrieveDataWithEmailAndPassword(
+        `${input.phoneNumber}@gmail.com`,
+        input.password,
+      )
+      .then(async (snapshot) => {
+        try {
+          const userId = snapshot.user.uid;
+          const tokenId = await snapshot.user.getIdToken();
+          const user = await this.getUserById(userId);
+          success(user, tokenId);
+        } catch (error) {
+          console.log("login error: ", error);
+          errorCallback(error);
+        }
+      })
+      .catch((error) => {
+        console.log("login error");
+        errorCallback(error);
+      });
+  };
   getPositionUser = () => (dispatch) => {
     // eslint-disable-next-line
     navigator.geolocation.getCurrentPosition(
@@ -100,6 +129,8 @@ class Instance {
         });
       },
       () => {
+        PermissionsAndroid.PERMISSIONS;
+
         try {
           if (Platform.OS === "android" && Platform.Version >= 23) {
             PermissionsAndroid.check(

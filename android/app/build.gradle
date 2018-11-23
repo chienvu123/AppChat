@@ -26,6 +26,7 @@ android {
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
+        multiDexEnabled true
         ndk {
             abiFilters "armeabi-v7a", "x86"
         }
@@ -71,6 +72,10 @@ android {
 }
 
 dependencies {
+    compile project(':rn-fetch-blob')
+    implementation project(':react-native-fbsdk')
+    compile project(':react-native-pdf')
+    compile project(':react-native-html-to-pdf')
     compile project(':react-native-file-picker')
     compile project(':react-native-linear-gradient')
     compile project(':react-native-firebase')
@@ -81,10 +86,12 @@ dependencies {
     implementation "com.google.firebase:firebase-database:16.0.1"
     implementation "com.google.android.gms:play-services-base:15.0.0"
     implementation 'com.google.android.gms:play-services-maps:15.0.0'
+    implementation "com.google.firebase:firebase-firestore:16.0.0"
     compile fileTree(dir: "libs", include: ["*.jar"])
     implementation "com.android.support:appcompat-v7:27.0.2"
     implementation 'com.android.support:support-v4:27.1.0'
     compile "com.facebook.react:react-native:+"  // From node_modules
+    implementation 'com.facebook.android:facebook-android-sdk:[4,5)'
 }
 
 // Run this once to be able to run the application with BUCK

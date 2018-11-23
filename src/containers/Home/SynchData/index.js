@@ -5,10 +5,12 @@ import {
   FlatList,
   TouchableOpacity,
   ImageBackground,
+  Animated,
 } from "react-native";
 import { colors, icons } from "themes";
 import { Header } from "components/CustomComponent";
 import Item from "../Item";
+import { verticalScale } from "utilities/Tranform";
 
 type Props = {
   dataWho: {
@@ -21,7 +23,8 @@ type Props = {
   },
   navigation: Object,
 };
-
+const MIN_HEIGHT = verticalScale(200);
+const HEIGHT_ITEM = verticalScale(15);
 class SynchData extends PureComponent<Props> {
   constructor(props) {
     super(props);
@@ -30,7 +33,7 @@ class SynchData extends PureComponent<Props> {
       synchData,
       arrEdited: [],
     };
-    this.date = new Date();
+    this.aniHeight = new Animated.Value(MIN_HEIGHT);
   }
 
   componentDidMount() {
@@ -45,9 +48,17 @@ class SynchData extends PureComponent<Props> {
       content: dataWhat[index].content,
       isEdit: false, // false: chưa chỉnh sửa, true: đã chỉnh sửa
     }));
-    this.setState({
-      synchData: arr,
-    });
+    this.setState(
+      {
+        synchData: arr,
+      },
+      () => {
+        Animated.timing(this.aniHeight, {
+          duration: 50,
+          toValue: MIN_HEIGHT + arr.length * HEIGHT_ITEM,
+        }).start();
+      },
+    );
   };
 
   edit = (index, value) => {
@@ -90,10 +101,10 @@ class SynchData extends PureComponent<Props> {
             />
           }
           onRightPress={() =>
-            this.props.navigation.navigate("Template", { SynchData })
+            this.props.navigation.navigate("Template", { data: synchData })
           }
         />
-        <View style={{ width: "100%", minHeight: 200, maxHeight: 400 }}>
+        <Animated.View style={{ width: "100%", height: this.aniHeight }}>
           <FlatList
             style={{ flex: 1 }}
             data={synchData}
@@ -101,9 +112,9 @@ class SynchData extends PureComponent<Props> {
             showsVerticalScrollIndicator={false}
             renderItem={({ item, index }) => (
               <Item
-                text={`${this.date
-                  .setTime(item.createtime)
-                  .toLocaleString()} - ${item.userName} - ${item.content}`}
+                text={`${new Date(item.createtime).toLocaleString()} - ${
+                  item.userName
+                } - ${item.content}`}
                 bgColor={colors.synch}
                 onSubmit={(value) => {
                   this.edit(index, value);
@@ -112,7 +123,7 @@ class SynchData extends PureComponent<Props> {
               />
             )}
           />
-        </View>
+        </Animated.View>
         <View
           style={{
             width: "100%",
@@ -129,11 +140,10 @@ class SynchData extends PureComponent<Props> {
               backgroundColor: colors.orange,
               alignItems: "center",
               justifyContent: "center",
+              marginTop: 20,
             }}
           >
-            <Text style={{ fontWeight: "bold", color: colors.white }}>
-              Đồng bộ
-            </Text>
+            <Text style={{ fontWeight: "bold", color: colors.white }}>Lưu</Text>
           </TouchableOpacity>
         </View>
       </View>

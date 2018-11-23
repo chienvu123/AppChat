@@ -20,7 +20,7 @@ type Props = {
 class Home extends PureComponent<Props> {
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = { enableScroll: true };
     this.who = {};
     this.what = {};
     this.date = new Date();
@@ -49,7 +49,7 @@ class Home extends PureComponent<Props> {
           const arr = tmp.map((item) => {
             const index = item.search(/ /);
             if (index !== -1) {
-              const createtime = item.substr(0, index);
+              const createtime = Number(item.substr(0, index));
               const value = item.substr(index + 1, item.length - index);
               if (fileName === "what") {
                 this.what[createtime] = value;
@@ -93,6 +93,7 @@ class Home extends PureComponent<Props> {
 
   render() {
     const { who, what } = this.state;
+
     return (
       <ScrollView
         ref={(node) => {
@@ -105,6 +106,7 @@ class Home extends PureComponent<Props> {
           this.offset = e.nativeEvent.contentOffset.y;
         }}
         showsVerticalScrollIndicator={false}
+        scrollEnabled={this.state.enableScroll}
       >
         <TouchableOpacity
           onPress={() => {
@@ -127,11 +129,26 @@ class Home extends PureComponent<Props> {
           {who ? (
             <FlatList
               data={who}
+              onTouchStart={() => {
+                this.setState({ enableScroll: false });
+              }}
+              onTouchMove={() => {
+                this.setState({ enableScroll: false });
+              }}
+              // onTouchEnd={() => {
+              //   this.setState({ enableScroll: true });
+              // }}
+              // onScrollBeginDrag={() => {
+              //   this.setState({ enableScroll: false });
+              // }}
+              onScrollEndDrag={() => {
+                this.setState({ enableScroll: true });
+              }}
               renderItem={({ item }) => (
                 <Item
-                  text={`${this.date
-                    .setTime(item.createtime)
-                    .toLocaleString()} - ${item.userName}`}
+                  text={`${new Date(item.createtime).toLocaleString()} - ${
+                    item.userName
+                  }`}
                   bgColor={colors.defaultOpacity}
                 />
               )}

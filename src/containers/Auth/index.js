@@ -3,6 +3,7 @@ import Splash from "./Splash";
 import Login from "./Login";
 import Login0 from "./Login0";
 import Signup from "./Signup";
+import LinkApp from "./LinkApp";
 
 export default createStackNavigator(
   {
@@ -17,6 +18,9 @@ export default createStackNavigator(
     },
     Login: {
       screen: Login,
+    },
+    LinkApp: {
+      screen: LinkApp,
     },
   },
   {

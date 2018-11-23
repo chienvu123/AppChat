@@ -11,7 +11,6 @@ import {
   Text,
 } from "react-native";
 import { connect } from "react-redux";
-import firebase from "react-native-firebase";
 import { images } from "themes";
 import UserModel from "actions/user";
 import style from "./style";
@@ -49,16 +48,10 @@ class Splash extends PureComponent<Props> {
       console.log("begin");
       if (tmp) {
         this.userId = tmp;
-        firebase
-          .database()
-          .ref("user")
-          .child(this.userId)
-          .once("value", (snapshot) => {
-            this.props.setUser({
-              ...snapshot.val(),
-            });
-            this.props.navigation.navigate("Home");
-          });
+        const user = await UserModel.getUserById(this.userId);
+        console.log("end");
+        this.props.setUser(user);
+        this.props.navigation.navigate("Home");
       } else {
         setTimeout(() => {
           this.props.navigation.navigate("Login0");

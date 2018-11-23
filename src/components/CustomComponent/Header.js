@@ -25,7 +25,7 @@ const styles = StyleSheet.create({
     height: header,
     flexDirection: "row",
     alignItems: "center",
-    paddingTop: verticalScale(15),
+    paddingTop: verticalScale(20),
     elevation: 3,
     borderBottomLeftRadius: 15,
     borderBottomRightRadius: 15,
@@ -106,7 +106,12 @@ export default class Index extends PureComponent<Props> {
           <TouchableOpacity
             onPress={onLeftPress}
             style={styles.left}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            hitSlop={{
+              top: 10,
+              bottom: 10,
+              left: 10,
+              right: 10,
+            }}
           >
             {iconLeft}
           </TouchableOpacity>

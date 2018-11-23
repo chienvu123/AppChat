@@ -11,14 +11,12 @@ import {
 import { connect } from "react-redux";
 import firebase from "react-native-firebase";
 import { images, colors } from "themes";
-import UserModel from "actions/user";
-import * as Custom from "components/CustomComponent";
+import { Custom } from "components";
 import style from "./style";
 import { checkInput, checkErrorCode, convertPhoneNumber11to10 } from "../check";
 
 type Props = {
   navigation: Object,
-  setUser: Function,
 };
 
 type State = {
@@ -51,11 +49,13 @@ class Signup extends PureComponent<Props, State> {
       firebase
         .auth()
         .signInAndRetrieveDataWithCredential(credential)
-        .then((snapshot) => {
-          this.createUser(snapshot);
+        .then(() => {
+          console.log("comfirm success");
+          this.createAccount();
         })
         .catch((error) => {
           console.log("otherPhone error: ", error);
+          this.setState({ messageComfirm: "Mã xác thực không đúng" });
         });
     } else {
       this.setState({
@@ -64,84 +64,77 @@ class Signup extends PureComponent<Props, State> {
       });
     }
   };
+  createAccount = async () => {
+    this.setState(
+      {
+        isComfirm: true,
+      },
+      async () => {
+        await firebase
+          .auth()
+          .createUserAndRetrieveDataWithEmailAndPassword(
+            `${this.tmpPhone}@gmail.com`,
+            this.passwordText,
+          )
+          .then((user) => {
+            console.log("createAccount: ", user);
+            this.createUser(user);
+          })
+          .catch((error) => {
+            this.codeInput = "";
+            this.setState(
+              {
+                isComfirm: false,
+              },
+              () => {
+                const { code } = error;
+                console.log("error verifier: ", error);
+                const message = checkErrorCode(code);
+                this.setState(
+                  {
+                    message,
+                  },
+                  () => {
+                    this.modalVerify.close();
+                  },
+                );
+              },
+            );
+          });
+        this.setState({
+          isComfirm: false,
+        });
+      },
+    );
+  };
   createUser = async (user) => {
-    console.log("success: ", user);
+    console.log("createUser: ", user);
     const tokenId = await user.user.getIdToken();
     const tmp = {
       id: user.user.uid,
       phone: this.tmpPhone,
-      photoUrl: "",
+      // photoUrl: "",
       createtime: user.user.metadata.creationTime,
       name: this.phoneText,
-      followed: [""],
-      following: [""],
       gender: this.genText,
       address: this.addressText,
     };
     this.user = tmp;
     this.modalVerify.close();
-    this.props.setUser(tmp, tokenId, {
-      account: this.tmpPhone,
-      password: this.passwordText,
+    console.log("navigate to LinkApp");
+    this.props.navigation.navigate("LinkApp", {
+      user: this.user,
+      tokenId,
+      account: { account: this.tmpPhone, password: this.passwordText },
     });
-    this.props.navigation.navigate("Home");
   };
-  verify = async (isVerified = false) => {
+  verify = (ownerPhone = true) => {
     // const { comfirmCode } = this.state;
-    if (isVerified !== true) {
-      // máy điện thoại khác
+    if (!ownerPhone) {
       this.otherPhoneVerify();
     } else {
-      await firebase
-        .auth()
-        .createUserAndRetrieveDataWithEmailAndPassword(
-          `${this.tmpPhone}@gmail.com`,
-          this.passwordText,
-        )
-        .then((user) => {
-          this.createUser(user);
-        })
-        .catch((error) => {
-          this.setState(
-            {
-              isComfirm: false,
-            },
-            () => {
-              const { code } = error;
-              console.log("error verifier: ", error);
-              const message = checkErrorCode(code);
-              this.setState(
-                {
-                  message,
-                },
-                () => {
-                  this.modalVerify.close();
-                },
-              );
-            },
-          );
-        });
-      this.setState({
-        isComfirm: false,
-      });
+      this.createAccount();
     }
-
-    // if (comfirmCode && this.codeInput) {
-    //   this.setState(
-    //     {
-    //       isComfirm: true,
-    //     },
-    //     async () => {
-    //       if (comfirmCode === this.codeInput) {
-    //       } else {
-    //         this.setState({
-    //           messageComfirm: "Mã xác nhận không đúng",
-    //           isComfirm: false,
-    //         });
-    //       }
-    //     },
-    //   );
-    // }
   };
   phoneText: string;
   tmpPhone: string;
@@ -156,7 +149,6 @@ class Signup extends PureComponent<Props, State> {
         isSignup: true,
       },
       async () => {
-        console.log(this.tmpPhone);
         firebase.auth().languageCode = "vi";
         await firebase
           .auth()
@@ -188,13 +180,7 @@ class Signup extends PureComponent<Props, State> {
                   }
                   break;
                 case firebase.auth.PhoneAuthState.AUTO_VERIFY_TIMEOUT: // or "timeout"
-                  // this.setState(
-                  //   {
-                  //     message: "Đã hết thời gian xác thực, vui lòng thử lại",
-                  //     isSignup: false,
-                  //   },
-                  //   () => this.modalVerify.close(),
-                  // );
+                  // TODO
                   break;
                 case firebase.auth.PhoneAuthState.AUTO_VERIFIED:
                   console.log("auto");
@@ -217,6 +203,11 @@ class Signup extends PureComponent<Props, State> {
       },
     );
   };
+  checkSignuping = () => {
+    if (!this.state.isSignup) {
+      this.signUp();
+    }
+  };
   signUp = async () => {
     await this.setState({
       message: "",
@@ -230,24 +221,29 @@ class Signup extends PureComponent<Props, State> {
     );
     if (result) {
       this.tmpPhone = convertPhoneNumber11to10(this.phoneText);
-      const query = firebase
-        .database()
-        .ref("user")
-        .orderByChild("account")
-        .equalTo(this.tmpPhone);
-      try {
-        const queryResult = await query.once("value");
-        if (queryResult.val() === null) {
-          this.sendCodeToPhone();
-        } else {
+      await firebase
+        .firestore()
+        .collection("account")
+        .where("account", "=", this.tmpPhone)
+        .get()
+        .then((snapshot) => {
+          if (snapshot.empty) {
+            console.log("check success: ");
+            this.sendCodeToPhone();
+          } else {
+            this.setState({
+              message: "Tài khoản đã được đăng ký.",
+              isSignup: false,
+            });
+          }
+        })
+        .catch((error) => {
+          console.log("error login: ", error);
           this.setState({
+            message: "Tài khoản không đúng",
             isSignup: false,
-            message: "Số điện thoại của bạn đã được đăng kí!",
           });
-        }
-      } catch (error) {
-        console.log("signUp err: ", error);
-      }
+        });
     } else {
       this.setState({
         isSignup: false,
@@ -259,122 +255,134 @@ class Signup extends PureComponent<Props, State> {
   render() {
     return (
       <ImageBackground source={images.background} style={style.container}>
-        <ScrollView
-          style={{ width: "100%", height: "100%" }}
-          keyboardShouldPersistTaps="handled"
-        >
-          <KeyboardAvoidingView style={style.form} behavior="padding">
-            <Custom.TextInput
-              ref={(phone) => {
-                this.phone = phone;
-              }}
-              placeholder="Số điện thoại"
-              onChangeText={(text) => {
-                this.phoneText = text;
-              }}
-              style={style.input}
-              returnKeyType="next"
-              keyboardType="numeric"
-              onFocus={() =>
-                this.setState({
-                  message: "",
-                })
-              }
-              maxLength={14}
-              onSubmitEditing={() => this.gender.focus()}
-            />
-            <Custom.TextInput
-              ref={(gen) => {
-                this.gender = gen;
-              }}
-              placeholder="Giới tính"
-              onChangeText={(text) => {
-                this.genText = text;
-              }}
-              style={style.input}
-              returnKeyType="next"
-              onSubmitEditing={() => this.address.focus()}
-            />
-            <Custom.TextInput
-              ref={(address) => {
-                this.address = address;
-              }}
-              placeholder="Địa chỉ"
-              onChangeText={(text) => {
-                this.addressText = text;
-              }}
-              style={style.input}
-              returnKeyType="next"
-              onSubmitEditing={() => this.password.focus()}
-            />
-            <Custom.TextInput
-              ref={(pass) => {
-                this.password = pass;
-              }}
-              placeholder="Mật khẩu"
-              onChangeText={(text) => {
-                this.passwordText = text;
-              }}
-              style={style.input}
-              onFocus={() =>
-                this.setState({
-                  message: "",
-                })
-              }
-              returnKeyType="next"
-              secureTextEntry
-              onSubmitEditing={() => this.comfirmPassword.focus()}
-            />
-            <Custom.TextInput
-              ref={(comfirm) => {
-                this.comfirmPassword = comfirm;
-              }}
-              placeholder="Nhập lại mật khẩu"
-              onFocus={() =>
-                this.setState({
-                  message: "",
-                })
-              }
-              onChangeText={(text) => {
-                this.comfirmText = text;
-              }}
-              style={style.input}
-              returnKeyType="done"
-              secureTextEntry
-              onSubmitEditing={this.signUp}
-            />
-            {this.state.message.length > 0 ? (
-              <Custom.Text style={{ color: "red" }}>
-                {this.state.message}
-              </Custom.Text>
-            ) : null}
-            <TouchableOpacity style={style.btn} onPress={this.signUp}>
-              {this.state.isSignup ? (
-                <ActivityIndicator color="#2AB9B9" size="small" />
-              ) : (
-                <Custom.Text style={style.txtBtn}>Tiếp tục</Custom.Text>
-              )}
-            </TouchableOpacity>
-            <View style={style.vBottom}>
-              <Custom.Text style={style.txtBottom}>
-                Bạn đã có tài khoản?
-              </Custom.Text>
-              <Custom.Text
-                style={[
-                  style.txtBottom,
-                  {
-                    textDecorationLine: "underline",
-                    textDecorationColor: colors.white,
-                    padding: 7,
-                  },
-                ]}
-                onPress={() => this.props.navigation.navigate("Login")}
-              >
-                ĐĂNG NHẬP
-              </Custom.Text>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+          <ScrollView
+            style={{ width: "100%", height: "100%" }}
+            keyboardShouldPersistTaps="handled"
+            ref={(node) => {
+              this.scrollView = node;
+            }}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={style.form}>
+              <Custom.TextInput
+                ref={(phone) => {
+                  this.phone = phone;
+                }}
+                placeholder="Số điện thoại"
+                onChangeText={(text) => {
+                  this.phoneText = text;
+                }}
+                style={style.input}
+                returnKeyType="next"
+                keyboardType="numeric"
+                onFocus={() =>
+                  this.setState({
+                    message: "",
+                  })
+                }
+                maxLength={14}
+                onSubmitEditing={() => this.gender.focus()}
+              />
+              <Custom.TextInput
+                ref={(gen) => {
+                  this.gender = gen;
+                }}
+                placeholder="Giới tính"
+                onChangeText={(text) => {
+                  this.genText = text;
+                }}
+                style={style.input}
+                returnKeyType="next"
+                onSubmitEditing={() => this.address.focus()}
+              />
+              <Custom.TextInput
+                ref={(address) => {
+                  this.address = address;
+                }}
+                placeholder="Địa chỉ"
+                onChangeText={(text) => {
+                  this.addressText = text;
+                }}
+                style={style.input}
+                returnKeyType="next"
+                onSubmitEditing={() => this.password.focus()}
+              />
+              <Custom.TextInput
+                ref={(pass) => {
+                  this.password = pass;
+                }}
+                placeholder="Mật khẩu"
+                onChangeText={(text) => {
+                  this.passwordText = text;
+                }}
+                style={style.input}
+                onFocus={(event) => {
+                  console.log(event.nativeEvent);
+                  this.setState(
+                    {
+                      message: "",
+                    },
+                    () => {
+                      // this.scrollView.scrollTo;
+                    },
+                  );
+                }}
+                returnKeyType="next"
+                secureTextEntry
+                onSubmitEditing={() => this.comfirmPassword.focus()}
+              />
+              <Custom.TextInput
+                ref={(comfirm) => {
+                  this.comfirmPassword = comfirm;
+                }}
+                placeholder="Nhập lại mật khẩu"
+                onFocus={() =>
+                  this.setState({
+                    message: "",
+                  })
+                }
+                onChangeText={(text) => {
+                  this.comfirmText = text;
+                }}
+                style={style.input}
+                returnKeyType="done"
+                secureTextEntry
+                onSubmitEditing={this.checkSignuping}
+              />
+              {this.state.message.length > 0 ? (
+                <Custom.Text style={{ color: "red" }}>
+                  {this.state.message}
+                </Custom.Text>
+              ) : null}
+              <TouchableOpacity style={style.btn} onPress={this.checkSignuping}>
+                {this.state.isSignup ? (
+                  <ActivityIndicator color="#2AB9B9" size="small" />
+                ) : (
+                  <Custom.Text style={style.txtBtn}>Tiếp tục</Custom.Text>
+                )}
+              </TouchableOpacity>
+              <View style={style.vBottom}>
+                <Custom.Text style={style.txtBottom}>
+                  Bạn đã có tài khoản?
+                </Custom.Text>
+                <Custom.Text
+                  style={[
+                    style.txtBottom,
+                    {
+                      textDecorationLine: "underline",
+                      textDecorationColor: colors.white,
+                      padding: 7,
+                    },
+                  ]}
+                  onPress={() => this.props.navigation.navigate("Login")}
+                >
+                  ĐĂNG NHẬP
+                </Custom.Text>
+              </View>
             </View>
-          </KeyboardAvoidingView>
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
         <Custom.Modal
           ref={(modal) => {
             this.modalVerify = modal;
@@ -389,7 +397,7 @@ class Signup extends PureComponent<Props, State> {
             placeholder="Nhập mã vào đây ..."
             style={style.inputModal}
             underlineColorAndroid="transparent"
-            defaultValue={this.codeInput}
+            value={this.codeInput}
             onChangeText={(text) => {
               this.codeInput = text;
             }}
@@ -411,7 +419,9 @@ class Signup extends PureComponent<Props, State> {
             {this.state.isComfirm ? (
               <ActivityIndicator size="small" color={colors.white} />
             ) : (
-              <Custom.Text style={style.txtBtnModal}>Tiếp tục</Custom.Text>
+              <Custom.Text style={style.txtBtnModal} onPress={this.verify}>
+                Tiếp tục
+              </Custom.Text>
             )}
           </TouchableOpacity>
         </Custom.Modal>
@@ -419,11 +429,42 @@ class Signup extends PureComponent<Props, State> {
     );
   }
 }
+
 /* eslint-disable */
 
-export default connect(
-  null,
-  {
-    setUser: UserModel.setUser,
-  },
-)(Signup);
+const mapStateToProps = (state) => ({
+  location: state.user.location,
+});
+
+export default connect(mapStateToProps)(Signup);
+
+// timeout
+
+// this.setState(
+//   {
+//     message: "Đã hết thời gian xác thực, vui lòng thử lại",
+//     isSignup: false,
+//   },
+//   () => this.modalVerify.close(),
+// );
+
+// signup
+
+// const query = firebase
+//   .database()
+//   .ref("user")
+//   .orderByChild("account")
+//   .equalTo(this.tmpPhone);
+// try {
+//   const queryResult = await query.once("value");
+//   if (queryResult.val() === null) {
+//     this.sendCodeToPhone();
+//   } else {
+//     this.setState({
+//       isSignup: false,
+//       message: "Số điện thoại của bạn đã được đăng kí!",
+//     });
+//   }
+// } catch (error) {
+//   console.log("signUp err: ", error);
+// }

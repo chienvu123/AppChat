@@ -5,21 +5,12 @@ export const SET_USER_OWNER = "SET_USER_OWNER";
 export const GET_POSITION_SUCCESS = "GET_POSITION_SUCCESS";
 export const GET_POSITION_ERROR = "GET_POSITION_ERROR";
 
-export const GET_POST_ING = "GET_POST_ING";
-export const GET_POST_SUCCESS = "GET_POST_SUCCESS";
-export const GET_POST_FAIL = "GET_POST_FAIL";
-
-export const GET_COMMENT_ING = "GET_COMMENT_ING";
-export const GET_COMMENT_SUCCESS = "GET_COMMENT_SUCCESS";
-export const GET_COMMENT_FAIL = "GET_COMMENT_FAIL";
-
-export const GET_PET_ING = "GET_PET_ING";
-export const GET_PET_SUCCESS = "GET_PET_SUCCESS";
-export const GET_PET_FAIL = "GET_PET_FAIL";
-
-export const DATA_DOG = "GET_DATA_DOG";
-export const DATA_CAT = "GET_DATA_CAT";
-export const DATA_FISH = "GET_DATA_FISH";
+export const GET_ROOM_ING = "GET_ROOM_ING";
+export const GET_ROOM_SUCCESS = "GET_ROOM_SUCCESS";
+export const ADD_ROOM = "added";
+export const UPDATE_ROOM = "modified";
+export const DELETE_ROOM = "removed";
+export const GET_ROOM_ERROR = "GET_ROOM_ERROR";
 
 export const TABBAR_VISIBLE = "TABBAR_VISIBLE";
 export const TABBAR_HIDDEN = "TABBAR_HIDDEN";

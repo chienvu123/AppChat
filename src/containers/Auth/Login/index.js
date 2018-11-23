@@ -8,17 +8,20 @@ import {
   Keyboard,
   ActivityIndicator,
 } from "react-native";
-import firebase from "react-native-firebase";
 import { connect } from "react-redux";
 import { images, icons, colors } from "themes";
 import * as Custom from "components/CustomComponent";
 import UserModel from "actions/user";
 import style from "./style";
-import { checkInputLogin, convertPhoneNumber11to10 } from "../check";
+import {
+  checkInputLogin,
+  convertPhoneNumber11to10,
+  checkErrorCode,
+} from "../check";
 
 type Props = {
   navigation: Object,
-  // setUser: Function,
+  setUser: Function,
 };
 
 class Index extends PureComponent<Props> {
@@ -34,7 +37,11 @@ class Index extends PureComponent<Props> {
 
   phoneText: string;
   passwordText: string;
-
+  checkRequest = () => {
+    if (!this.state.isLogin) {
+      this.login();
+    }
+  };
   login = async () => {
     await this.setState({
       message: "",
@@ -45,56 +52,28 @@ class Index extends PureComponent<Props> {
       this.passwordText,
     );
     if (result) {
-      this.phoneText = convertPhoneNumber11to10(this.phoneText);
-      firebase
-        .firestore()
-        .collection("account")
-        .where("account", "=", this.phoneText)
-        .where("password", "=", this.passwordText)
-        .get()
-        .then((snapshot) => {
-          console.log("login success: ", snapshot);
+      const phoneNumber = convertPhoneNumber11to10(this.phoneText);
+      UserModel.logIn(
+        {
+          phoneNumber,
+          password: this.passwordText,
+        },
+        (user, tokenId) => {
+          this.props.setUser(user, tokenId);
           this.props.navigation.navigate("Home");
-        })
-        .catch((error) => {
-          console.log("error login: ", error);
-        });
-      // firebase
-      //   .auth()
-      //   .signInAndRetrieveDataWithEmailAndPassword(
-      //     `${this.phoneText}@gmail.com`,
-      //     this.passwordText,
-      //   )
-      //   .then(async (user) => {
-      //     try {
-      //       const token = firebase.auth().currentUser.getIdToken();
-      //       console.log(token);
-      //       const child = firebase
-      //         .database()
-      //         .ref("user")
-      //         .child(user.user.uid);
-      //       const tmp = await child.once("value");
-      //       this.props.setUser(
-      //         {
-      //           ...tmp.val(),
-      //           currentLocation: this.props.location,
-      //         },
-      //         token,
-      //       );
-      //       this.props.navigation.navigate("Home");
-      //     } catch (error) {
-      //       console.log("login error: ", error);
-      //     }
-      //   })
-      //   .catch((error) => {
-      //     const { code } = error;
-      //     const messageCheck = checkErrorCode(code);
-      //     this.setState({
-      //       message: messageCheck,
-      //       isLogin: false,
-      //     });
-      //   });
+        },
+        (error) => {
+          console.log("error", error);
+          const { code } = error;
+          const messageCheck = checkErrorCode(code);
+          this.setState({
+            message: messageCheck,
+            isLogin: false,
+          });
+        },
+      );
     } else {
+      console.log("error");
       this.setState({
         message,
         isLogin: false,
