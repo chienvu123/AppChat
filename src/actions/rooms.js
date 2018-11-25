@@ -46,7 +46,7 @@ export const getRooms = () => (dispatch) => {
       (snapshot) => {
         const { docChanges } = snapshot;
         docChanges.forEach((docs) => {
-          console.log(docs.newIndex, docs.doc.data(), docs.oldIndex, docs.type);
+          // console.log(docs.newIndex, docs.doc.data(), docs.oldIndex, docs.type);
           const { type, oldIndex, newIndex } = docs;
           const data = docs.doc.data();
           dispatch({

@@ -17,7 +17,9 @@ type Props = {
 class SelectRoom extends PureComponent<Props> {
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = {
+      data: [],
+    };
   }
 
   componentDidMount() {
@@ -31,10 +33,34 @@ class SelectRoom extends PureComponent<Props> {
     firebase
       .firestore()
       .collection("docs")
-      .get()
-      .then((snapshot) => {
-        // console.log("home: ", snapshot.docs);
-      });
+      .onSnapshot(
+        (snapshot) => {
+          // console.log("home: ", snapshot.docs);
+          const { docChanges } = snapshot;
+          docChanges.forEach((docSnapshot) => {
+            const { doc, newIndex, oldIndex, type } = docSnapshot;
+            const tmp = doc.data();
+            switch (type) {
+              case "added":
+                const { data } = this.state;
+                data.push(tmp);
+                this.setState({ data });
+                break;
+              case "modified":
+                break;
+              //TODO
+              case "removed":
+                // TODO
+                break;
+              default:
+              // TODO
+            }
+          });
+        },
+        (error) => {
+          console.log("home error: ", error);
+        },
+      );
   };
 
   render() {
