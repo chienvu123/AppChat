@@ -5,6 +5,7 @@
   "rules": {
     "no-console": "off",
     "no-underscore-dangle": "off",
+    "dot-notation": ["error"],
     "no-plusplus": "off",
     "react/jsx-filename-extension": [
       1,

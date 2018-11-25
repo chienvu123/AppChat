@@ -13,6 +13,7 @@ type Props = {
   children: ReactNode,
   style: ViewStyle,
   onPress: Function,
+  onClose: Function,
 };
 
 const style = StyleSheet.create({
@@ -42,6 +43,7 @@ const style = StyleSheet.create({
 export default class Modal extends PureComponent<Props> {
   static defaultProps = {
     onPress: () => {},
+    onClose: () => {},
   };
   state = {
     isShow: false,
@@ -70,7 +72,9 @@ export default class Modal extends PureComponent<Props> {
         {
           isShow: false,
         },
-        this.props.onPress,
+        () => {
+          this.props.onPress();
+        },
       );
     });
   };
@@ -81,7 +85,9 @@ export default class Modal extends PureComponent<Props> {
         <TouchableOpacity
           style={style.view}
           activeOpacity={1}
-          onPress={this.close}
+          onPress={() => {
+            this.props.onClose();
+          }}
         />
         <Animated.View
           style={[

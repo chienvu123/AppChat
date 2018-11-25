@@ -1,9 +1,11 @@
 export default (number) => {
   const date = new Date();
+  const date2 = new Date(number);
+  const time = date2.toLocaleTimeString();
   const tmpTime = date.getTime();
   const diff = tmpTime - number;
   const numberDate = diff / (86400 * 1000);
-  if (numberDate >= 1 && numberDate < 2) return "Hôm qua";
+  if (numberDate >= 1 && numberDate < 2) return `${time} Hôm qua`;
   if (numberDate >= 2 && numberDate < 4) {
     return `${Math.floor(numberDate)} ngày trước`;
   }

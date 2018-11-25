@@ -17,6 +17,7 @@ const randomColor = (): string => {
   }
   return color;
 };
-const randomHeight = (): number => Math.floor(Math.random() * 150) + 170;
+const randomRoomId = (): number =>
+  Math.floor(Math.random() * 8999999) + 10000000;
 
-export { randomId, randomColor, randomHeight };
+export { randomId, randomColor, randomRoomId };

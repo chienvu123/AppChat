@@ -4,6 +4,8 @@ import SynchData from "./SynchData";
 import Template from "../Template";
 import ShowTemplate from "../Template/ShowTemplate";
 import SelectRoom from "./SelectRoom";
+import Doc from "./Document";
+import AddRoom from "./AddRoom";
 
 export default createStackNavigator(
   {
@@ -21,6 +23,12 @@ export default createStackNavigator(
     },
     SelectRoom: {
       screen: SelectRoom,
+    },
+    Document: {
+      screen: Doc,
+    },
+    AddRoom: {
+      screen: AddRoom,
     },
   },
   {
