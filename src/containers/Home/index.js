@@ -6,6 +6,7 @@ import ShowTemplate from "../Template/ShowTemplate";
 import SelectRoom from "./SelectRoom";
 import Doc from "./Document";
 import AddRoom from "./AddRoom";
+import AddDocument from "./AddDocument";
 
 export default createStackNavigator(
   {
@@ -29,6 +30,9 @@ export default createStackNavigator(
     },
     AddRoom: {
       screen: AddRoom,
+    },
+    AddDocument: {
+      screen: AddDocument,
     },
   },
   {
