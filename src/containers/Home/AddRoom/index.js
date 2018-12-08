@@ -4,7 +4,6 @@
 import React, { PureComponent } from "react";
 import {
   View,
-  ImageBackground,
   StatusBar,
   ScrollView,
   TouchableOpacity,
@@ -13,6 +12,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  BackHandler,
 } from "react-native";
 import { Header } from "components/CustomComponent";
 import { connect } from "react-redux";
@@ -30,53 +30,143 @@ type Props = {
 class AddRoom extends PureComponent<Props> {
   constructor(props) {
     super(props);
+    const { params } = props.navigation.state;
+    console.log("param: ", params);
+    this.param = params;
+    if (params !== undefined) {
+      this.title = this.param.item.title;
+      this.describle = this.param.item.describle;
+      this.title1 = this.title;
+      this.describle1 = this.describle;
+    } else {
+      this.title = null;
+      this.describle = null;
+    }
     this.state = {
       isAdding: false,
     };
   }
   componentDidMount() {
-    const createtime = new Date().getTime();
-    const userId = this.props.userOwner.id;
-    const roomId = randomRoomId();
-    const data = {
-      createtime,
-      userId,
-      status: 0,
-      roomId,
-    };
-    firebase
-      .firestore()
-      .collection("docs")
-      .add(data)
-      .then((value) => {
-        this.roomId = value.id;
+    if (!this.param) {
+      const createtime = new Date().getTime();
+      const userId = this.props.userOwner.id;
+      const roomId = randomRoomId();
+      const data = {
+        createtime,
+        userId,
+        status: -1,
+        roomId,
+      };
+      firebase
+        .firestore()
+        .collection("docs")
+        .add(data)
+        .then((value) => {
+          this.roomId = value.id;
+        });
+    } else {
+      const path = firebase
+        .firestore()
+        .collection("docs")
+        .doc(this.param.item.roomKey);
+      path.update({
+        status: 1,
       });
+      this.path = path;
+    }
+    this.backListen = BackHandler.addEventListener(
+      "hardwareBackPress",
+      this.backHandler,
+    );
   }
+  backHandler = () => {
+    const { isAdding } = this.state;
+    let check = true;
+    if (!isAdding) {
+      this.remove();
+      this.props.navigation.goBack();
+    } else {
+      Alert.alert(
+        "Lưu ý: ",
+        "Hành động chưa hoàn thành, bạn có muốn hủy không?",
+        [
+          {
+            text: "Đồng ý",
+            onPress: () => {
+              this.remove();
+              this.props.navigation.goBack();
+            },
+          },
+          {
+            text: "Hủy bỏ",
+            style: "cancel",
+            onPress: () => {
+              check = false;
+            },
+          },
+        ],
+      );
+    }
+    return check;
+  };
   addRoom = () => {
     this.setState({ isAdding: true });
-    const data = {
-      title: this.title,
-      describle: this.describle,
-    };
-    firebase
-      .firestore()
-      .collection("docs")
-      .doc(this.roomId)
-      .update(data)
-      .then(
-        () => {
+    if (!this.param) {
+      const data = {
+        title: this.title,
+        describle: this.describle,
+        status: 0,
+      };
+      firebase
+        .firestore()
+        .collection("docs")
+        .doc(this.roomId)
+        .update(data)
+        .then(
+          () => {
+            this.setState({ isAdding: false });
+            this.props.navigation.goBack();
+          },
+          (error) => {
+            this.setState({ isAdding: false });
+            Alert.alert("Lỗi: ", error);
+          },
+        )
+        .catch((error) => {
+          console.log("Add error: ", error);
           this.setState({ isAdding: false });
-          this.props.navigation.goBack();
-        },
-        (error) => {
-          this.setState({ isAdding: false });
-          Alert.alert("Lỗi: ", error);
-        },
-      )
-      .catch((error) => {
-        console.log("Add error: ", error);
-        this.setState({ isAdding: false });
-      });
+        });
+    } else if (
+      this.title !== this.title1 ||
+      this.describle !== this.describle1
+    ) {
+      const data = {
+        userId: this.props.userOwner.id,
+        title: this.title,
+        describle: this.describle,
+        createtime: new Date().getTime(),
+      };
+      let index = 0;
+      this.path
+        .collection("updates")
+        .add(data)
+        .then(() => {
+          index++;
+          if (index === 2) this.props.navigation.goBack();
+        });
+      this.path
+        .update({
+          status: 2,
+          title: this.title,
+          describle: this.describle,
+        })
+        .then(() => {
+          index++;
+          if (index === 2) this.props.navigation.goBack();
+        });
+    } else {
+      Alert.alert("Lưu ý: ", "bạn chưa chỉnh sửa gì");
+    }
   };
   check = () => {
     if (this.title) {
@@ -90,32 +180,27 @@ class AddRoom extends PureComponent<Props> {
     }
   };
   remove = () => {
-    firebase
-      .firestore()
-      .collection("docs")
-      .doc(this.roomId)
-      .delete();
-  };
-  backHandler = () => {
-    const { isAdding } = this.state;
-    if (!isAdding) {
-      this.remove();
-      this.props.navigation.goBack();
+    if (!this.param) {
+      firebase
+        .firestore()
+        .collection("docs")
+        .doc(this.roomId)
+        .delete();
     } else {
-      Alert.alert("Lưu ý: ", "Bạn đang tạo phòng, bạn có muốn hủy", [
-        {
-          text: "Đồng ý",
-          onPress: () => {
-            this.remove();
-            this.props.navigation.goBack();
-          },
-        },
-      ]);
+      this.path.update({
+        status: 0,
+      });
     }
   };
+
   render() {
     const { userOwner } = this.props;
     const { isAdding } = this.state;
+    const item = this.param ? this.param.item : null;
+    const user = this.param ? item.user : userOwner;
+    const dateStr = this.param
+      ? new Date(item.createtime).toLocaleDateString()
+      : new Date().toLocaleDateString();
     return (
       <View
         style={{
@@ -123,13 +208,7 @@ class AddRoom extends PureComponent<Props> {
         }}
       >
         <StatusBar translucent backgroundColor="transparent" />
-        <Header
-          onLeftPress={this.backHandler}
-          center="Tạo phòng"
-          onRightPress={() => {
-            console.log("click add");
-          }}
-        />
+        <Header onLeftPress={this.backHandler} center="Tạo phòng" />
         <KeyboardAvoidingView behavior="padding">
           <ScrollView
             keyboardShouldPersistTaps="handled"
@@ -144,13 +223,13 @@ class AddRoom extends PureComponent<Props> {
               <View style={style.row}>
                 <Text style={style.col1}>Người tạo: </Text>
                 <Text style={style.col2} numberOfLines={1}>
-                  {userOwner.name}
+                  {user.name}
                 </Text>
               </View>
               <View style={style.row}>
                 <Text style={style.col1}>Ngày tạo: </Text>
                 <Text style={style.col2} numberOfLines={1}>
-                  {new Date().toLocaleDateString()}
+                  {dateStr}
                 </Text>
               </View>
               <View style={style.row}>
@@ -162,6 +241,7 @@ class AddRoom extends PureComponent<Props> {
                     marginLeft: "5%",
                     padding: 0,
                   }}
+                  defaultValue={item ? item.title : null}
                   placeholder="phòng họp ..."
                   onChangeText={(text) => {
                     this.title = text;
@@ -185,6 +265,7 @@ class AddRoom extends PureComponent<Props> {
                     marginTop: 7,
                     height: 100,
                   }}
+                  defaultValue={item ? item.describle : null}
                   placeholder="mô tả phòng họp ..."
                   onChangeText={(text) => {
                     this.describle = text;

@@ -49,8 +49,8 @@ class Signup extends PureComponent<Props, State> {
       firebase
         .auth()
         .signInAndRetrieveDataWithCredential(credential)
-        .then(() => {
-          console.log("comfirm success");
+        .then((userCredential) => {
+          console.log("comfirm success:", userCredential);
           this.createAccount();
         })
         .catch((error) => {

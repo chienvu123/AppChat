@@ -82,7 +82,6 @@ export default createBottomTabNavigator(
           lineHeight: verticalScale(22),
           fontSize: horizontalScale(11),
         };
-        console.log(routeName, focused);
         if (routeName === "Home") {
           if (focused) {
             return <Text style={style}>Trang chủ</Text>;

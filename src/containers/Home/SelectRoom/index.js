@@ -9,12 +9,15 @@ import {
   FlatList,
   TouchableOpacity,
   Text,
+  ActivityIndicator,
 } from "react-native";
-import { Header } from "components/CustomComponent";
+import { Header, Modal } from "components/CustomComponent";
 import { connect } from "react-redux";
 import firebase from "react-native-firebase";
 import { icons, colors } from "themes";
+import { UserModel } from "actions";
 import { getRooms } from "actions/rooms";
+import Room from "./room";
 
 type Props = {
   getRooms: Function,
@@ -26,29 +29,35 @@ class SelectRoom extends PureComponent<Props> {
     super(props);
     this.state = {
       data: [],
+      isLoading: true,
     };
   }
 
   componentDidMount() {
     this.getData();
-    this.props.getRooms();
+    // this.props.getRooms();
   }
 
   getData = () => {
     firebase
       .firestore()
       .collection("docs")
+      .orderBy("createtime")
       .onSnapshot(
         (snapshot) => {
           // console.log("home: ", snapshot.docs);
-          const { docs, size } = snapshot;
+          const { size } = snapshot;
+          let { docs } = snapshot;
+          docs = docs.reverse();
           const data = [];
-          docs.forEach((doc) => {
+          docs.forEach(async (doc) => {
             const tmp = doc.data();
+            const user = await UserModel.getUserById(tmp.userId);
+            tmp.user = user;
             tmp["roomKey"] = doc.id; // eslint-disable-line
             data.push(tmp);
             if (data.length === size) {
-              this.setState({ data });
+              this.setState({ data, isLoading: false });
             }
           });
         },
@@ -82,35 +91,69 @@ class SelectRoom extends PureComponent<Props> {
             this.props.navigation.navigate("AddRoom");
           }}
         />
-        <FlatList
-          style={{ flex: 1 }}
-          data={this.state.data}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={{
-                width: "90%",
-                height: 44,
-                backgroundColor: colors.default,
-                borderRadius: 5,
-                justifyContent: "center",
-                paddingLeft: 7,
-                marginTop: 7,
-                marginLeft: "5%",
-              }}
-              onPress={() => {
-                this.props.navigation.navigate("Document", {
-                  roomId: item.roomId,
-                  roomKey: item.roomKey,
-                });
-              }}
-            >
-              <Text style={{ color: "white", fontSize: 15 }}>
-                {`${item.roomId} - ${item.title}`}
-              </Text>
-            </TouchableOpacity>
-          )}
-        />
+        {this.state.isLoading ? (
+          <View
+            style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+          >
+            <ActivityIndicator size="small" color={colors.default} />
+          </View>
+        ) : (
+          <FlatList
+            style={{ flex: 1 }}
+            data={this.state.data}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={({ item }) => (
+              <Room
+                navigation={this.props.navigation}
+                item={item}
+                onLongPress={(param) => {
+                  this.param = param;
+                  this.modal.open();
+                }}
+              />
+            )}
+          />
+        )}
+        <Modal
+          ref={(node) => {
+            this.modal = node;
+          }}
+          style={{
+            width: "96%",
+            backgroundColor: "white",
+            height: 150,
+            borderRadius: 15,
+          }}
+        >
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              marginLeft: 15,
+              borderBottomColor: "grey",
+              borderBottomWidth: 1,
+            }}
+            onPress={() => {
+              this.modal.close();
+              this.modal1.open();
+            }}
+          >
+            <Text style={{ fontWeight: "bold" }}>Xem danh sách chỉnh sửa</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              marginLeft: 15,
+            }}
+            onPress={() => {
+              this.modal.close();
+              this.props.navigation.navigate("AddRoom", this.param);
+            }}
+          >
+            <Text style={{ fontWeight: "bold" }}>Chỉnh sửa</Text>
+          </TouchableOpacity>
+        </Modal>
       </View>
     );
   }

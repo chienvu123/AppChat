@@ -13,6 +13,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  BackHandler,
 } from "react-native";
 import { Header } from "components/CustomComponent";
 import { connect } from "react-redux";
@@ -33,35 +34,42 @@ class AddRoom extends PureComponent<Props> {
     this.state = {
       isAdding: false,
     };
+    this.roomId = props.navigation.getParam("roomId", "");
+    this.roomKey = props.navigation.getParam("roomKey", "");
   }
   componentDidMount() {
     const createtime = new Date().getTime();
     const userId = this.props.userOwner.id;
-    const roomId = randomRoomId();
     const data = {
       createtime,
       userId,
-      status: 0,
-      roomId,
+      status: -1,
+      docId: this.roomKey,
     };
     firebase
       .firestore()
-      .collection("docs")
+      .collection("contents")
       .add(data)
       .then((value) => {
-        this.roomId = value.id;
+        this.id = value.id;
       });
+    this.backListen = BackHandler.addEventListener(
+      "hardwareBackPress",
+      this.backHandler,
+    );
   }
-  addRoom = () => {
+  addDocument = () => {
+    const endtime = new Date().getTime();
     this.setState({ isAdding: true });
     const data = {
-      title: this.title,
-      describle: this.describle,
+      endtime,
+      status: 0,
+      content: this.describle,
     };
     firebase
       .firestore()
-      .collection("docs")
-      .doc(this.roomId)
+      .collection("contents")
+      .doc(this.id)
       .update(data)
       .then(
         () => {
@@ -79,30 +87,29 @@ class AddRoom extends PureComponent<Props> {
       });
   };
   check = () => {
-    if (this.title) {
+    if (!this.state.isAdding) {
       if (this.describle) {
-        this.addRoom();
+        this.addDocument();
       } else {
-        Alert.alert("Lưu ý: ", "Bạn không được để trống mô tả");
+        Alert.alert("Lưu ý: ", "Bạn không được để trống nội dung");
       }
-    } else {
-      Alert.alert("Lưu ý: ", "Bạn không được để trống tên phòng");
     }
   };
   remove = () => {
     firebase
       .firestore()
-      .collection("docs")
-      .doc(this.roomId)
+      .collection("contents")
+      .doc(this.id)
       .delete();
   };
   backHandler = () => {
     const { isAdding } = this.state;
+    let check = true;
     if (!isAdding) {
       this.remove();
       this.props.navigation.goBack();
     } else {
-      Alert.alert("Lưu ý: ", "Bạn đang tạo phòng, bạn có muốn hủy", [
+      Alert.alert("Lưu ý: ", "Hành động chưa hoàn thành, bạn có muốn hủy", [
         {
           text: "Đồng ý",
           onPress: () => {
@@ -110,8 +117,16 @@ class AddRoom extends PureComponent<Props> {
             this.props.navigation.goBack();
           },
         },
+        {
+          text: "Hủy bỏ",
+          style: "cancel",
+          onPress: () => {
+            check = false;
+          },
+        },
       ]);
     }
+    return check;
   };
   render() {
     const { userOwner } = this.props;
@@ -125,7 +140,7 @@ class AddRoom extends PureComponent<Props> {
         <StatusBar translucent backgroundColor="transparent" />
         <Header
           onLeftPress={this.backHandler}
-          center="Tạo phòng"
+          center="Thêm tốc kí"
           onRightPress={() => {
             console.log("click add");
           }}
@@ -154,19 +169,10 @@ class AddRoom extends PureComponent<Props> {
                 </Text>
               </View>
               <View style={style.row}>
-                <Text style={{ width: "30%" }}>Tên phòng:</Text>
-                <TextInput
-                  style={{
-                    width: "65%",
-                    height: 44,
-                    marginLeft: "5%",
-                    padding: 0,
-                  }}
-                  placeholder="phòng họp ..."
-                  onChangeText={(text) => {
-                    this.title = text;
-                  }}
-                />
+                <Text style={style.col1}>Mã phòng:</Text>
+                <Text style={style.col2} numberOfLines={1}>
+                  {this.roomId}
+                </Text>
               </View>
               <View
                 style={{
@@ -176,7 +182,7 @@ class AddRoom extends PureComponent<Props> {
                   paddingLeft: 10,
                 }}
               >
-                <Text style={{ width: "30%" }}>Mô tả:</Text>
+                <Text style={{ width: "30%" }}>Nội dung:</Text>
                 <TextInput
                   style={{
                     width: "100%",
@@ -185,7 +191,7 @@ class AddRoom extends PureComponent<Props> {
                     marginTop: 7,
                     height: 100,
                   }}
-                  placeholder="mô tả phòng họp ..."
+                  placeholder="nội dung muốn thêm ..."
                   onChangeText={(text) => {
                     this.describle = text;
                   }}

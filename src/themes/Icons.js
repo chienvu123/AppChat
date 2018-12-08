@@ -8,6 +8,9 @@ const icons = {
   backBlack: require("../../assets/icons/back.png"),
   save: require("../../assets/icons/save.png"),
   add: require("../../assets/icons/add.png"),
+  showPassword: require("../../assets/icons/showPassword.png"),
+  password: require("../../assets/icons/password.png"),
+  profile: require("../../assets/icons/profile.png"),
 };
 
 export default icons;

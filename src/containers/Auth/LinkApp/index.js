@@ -52,6 +52,7 @@ class LinkApp extends PureComponent<Props> {
       },
       (error) => {
         console.log("Sign in error", error);
+        this.skipLink();
       },
     );
   };

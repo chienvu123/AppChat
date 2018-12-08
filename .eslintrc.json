@@ -7,6 +7,7 @@
     "no-underscore-dangle": "off",
     "dot-notation": ["error"],
     "no-plusplus": "off",
+    "no-param-reassign": ["error", { "props": false }],
     "react/jsx-filename-extension": [
       1,
       {

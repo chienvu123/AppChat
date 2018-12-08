@@ -36,7 +36,7 @@ const style = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     top: 25 * d.ratioH,
-    backgroundColor: colors.placeholderColorWhite,
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
 });
 
@@ -74,6 +74,7 @@ export default class Modal extends PureComponent<Props> {
         },
         () => {
           this.props.onPress();
+          this.props.onClose();
         },
       );
     });
@@ -86,7 +87,7 @@ export default class Modal extends PureComponent<Props> {
           style={style.view}
           activeOpacity={1}
           onPress={() => {
-            this.props.onClose();
+            this.close();
           }}
         />
         <Animated.View
