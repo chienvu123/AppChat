@@ -107,6 +107,7 @@ class SelectRoom extends PureComponent<Props> {
                 navigation={this.props.navigation}
                 item={item}
                 onLongPress={(param) => {
+                  console.log("param: ", param);
                   this.param = param;
                   this.modal.open();
                 }}
@@ -135,7 +136,7 @@ class SelectRoom extends PureComponent<Props> {
             }}
             onPress={() => {
               this.modal.close();
-              this.modal1.open();
+              this.props.navigation.navigate("ListChange", this.param);
             }}
           >
             <Text style={{ fontWeight: "bold" }}>Xem danh sách chỉnh sửa</Text>

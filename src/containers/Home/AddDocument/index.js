@@ -4,7 +4,6 @@
 import React, { PureComponent } from "react";
 import {
   View,
-  ImageBackground,
   StatusBar,
   ScrollView,
   TouchableOpacity,
@@ -20,7 +19,6 @@ import { connect } from "react-redux";
 import firebase from "react-native-firebase";
 import { colors } from "themes";
 import { User } from "constants/dataType";
-import { randomRoomId } from "utilities/random";
 import style from "./style";
 
 type Props = {
@@ -36,6 +34,8 @@ class AddRoom extends PureComponent<Props> {
     };
     this.roomId = props.navigation.getParam("roomId", "");
     this.roomKey = props.navigation.getParam("roomKey", "");
+    this.isEdit = props.navigation.getParam("isEdit", false);
+    this.item = props.navigation.getParam("item", {});
   }
   componentDidMount() {
     const createtime = new Date().getTime();
@@ -46,61 +46,93 @@ class AddRoom extends PureComponent<Props> {
       status: -1,
       docId: this.roomKey,
     };
-    firebase
+    const path = firebase
       .firestore()
-      .collection("contents")
-      .add(data)
-      .then((value) => {
+      .collection("docs")
+      .doc(this.roomKey)
+      .collection("contents");
+    this.pathContent = path;
+    if (!this.isEdit) {
+      path.add(data).then((value) => {
         this.id = value.id;
+        this.query = path.doc(this.id);
       });
+    } else {
+      this.query = path.doc(this.item.id);
+      this.query
+        .update({
+          status: 1,
+        })
+        .catch((error) => {
+          console.log("update error: ", error);
+        });
+    }
+
     this.backListen = BackHandler.addEventListener(
       "hardwareBackPress",
       this.backHandler,
     );
   }
-  addDocument = () => {
+  componentWillUnmount() {
+    this.backListen.remove();
+  }
+  addDocument = async () => {
     const endtime = new Date().getTime();
     this.setState({ isAdding: true });
-    const data = {
-      endtime,
-      status: 0,
-      content: this.describle,
-    };
-    firebase
-      .firestore()
-      .collection("contents")
-      .doc(this.id)
-      .update(data)
-      .then(
-        () => {
-          this.setState({ isAdding: false });
-          this.props.navigation.goBack();
-        },
-        (error) => {
-          this.setState({ isAdding: false });
-          Alert.alert("Lỗi: ", error);
-        },
-      )
-      .catch((error) => {
-        console.log("Add error: ", error);
-        this.setState({ isAdding: false });
+    let data = null;
+    if (!this.isEdit) {
+      data = {
+        endtime,
+        status: 0,
+        content: this.describle,
+      };
+    } else {
+      data = {
+        status: 2,
+        content: this.describle,
+        userId: this.props.userOwner.id,
+      };
+    }
+    try {
+      await this.query.update(data);
+      this.query.collection("updates").add({
+        userId: this.props.userOwner.id,
+        createtime: endtime,
+        content: this.describle,
       });
+      this.setState({ isAdding: false });
+      this.props.navigation.goBack();
+    } catch (error) {
+      console.log("Add error: ", error);
+      Alert.alert("Lỗi: ", error);
+      this.setState({ isAdding: false });
+    }
   };
   check = () => {
     if (!this.state.isAdding) {
       if (this.describle) {
-        this.addDocument();
+        if (this.isEdit) {
+          if (this.describle !== this.item.content) {
+            this.addDocument();
+          } else {
+            Alert.alert("Lưu ý: ", "Bạn chưa thay đổi gì");
+          }
+        } else {
+          this.addDocument();
+        }
       } else {
         Alert.alert("Lưu ý: ", "Bạn không được để trống nội dung");
       }
     }
   };
   remove = () => {
-    firebase
-      .firestore()
-      .collection("contents")
-      .doc(this.id)
-      .delete();
+    if (this.isEdit) {
+      this.query.update({
+        status: this.item.status,
+      });
+    } else {
+      this.query.delete();
+    }
   };
   backHandler = () => {
     const { isAdding } = this.state;
@@ -109,22 +141,32 @@ class AddRoom extends PureComponent<Props> {
       this.remove();
       this.props.navigation.goBack();
     } else {
-      Alert.alert("Lưu ý: ", "Hành động chưa hoàn thành, bạn có muốn hủy", [
+      Alert.alert(
+        "Lưu ý: ",
+        "Hành động chưa hoàn thành, bạn có muốn hủy",
+        [
+          {
+            text: "Đồng ý",
+            onPress: () => {
+              this.remove();
+              this.props.navigation.goBack();
+            },
+          },
+          {
+            text: "Hủy bỏ",
+            style: "cancel",
+            onPress: () => {
+              check = false;
+            },
+          },
+        ],
         {
-          text: "Đồng ý",
-          onPress: () => {
-            this.remove();
-            this.props.navigation.goBack();
+          cancelable: false,
+          onDismiss: () => {
+            console.log("alert dismiss");
           },
         },
-        {
-          text: "Hủy bỏ",
-          style: "cancel",
-          onPress: () => {
-            check = false;
-          },
-        },
-      ]);
+      );
     }
     return check;
   };
@@ -192,6 +234,7 @@ class AddRoom extends PureComponent<Props> {
                     height: 100,
                   }}
                   placeholder="nội dung muốn thêm ..."
+                  defaultValue={this.isEdit ? this.item.content : null}
                   onChangeText={(text) => {
                     this.describle = text;
                   }}

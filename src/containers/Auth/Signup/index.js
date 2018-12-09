@@ -41,22 +41,29 @@ class Signup extends PureComponent<Props, State> {
   }
   otherPhoneVerify = () => {
     const { codeInput } = this;
-    if (codeInput) {
-      const credential = firebase.auth.PhoneAuthProvider.credential(
-        this.verificationId,
-        codeInput,
+    if (codeInput && codeInput.length === 6) {
+      this.setState(
+        {
+          isComfirm: true,
+        },
+        () => {
+          const credential = firebase.auth.PhoneAuthProvider.credential(
+            this.verificationId,
+            codeInput,
+          );
+          firebase
+            .auth()
+            .signInAndRetrieveDataWithCredential(credential)
+            .then((userCredential) => {
+              console.log("comfirm success:", userCredential);
+              this.createAccount();
+            })
+            .catch((error) => {
+              console.log("otherPhone error: ", error);
+              this.setState({ messageComfirm: "Mã xác thực không đúng" });
+            });
+        },
       );
-      firebase
-        .auth()
-        .signInAndRetrieveDataWithCredential(credential)
-        .then((userCredential) => {
-          console.log("comfirm success:", userCredential);
-          this.createAccount();
-        })
-        .catch((error) => {
-          console.log("otherPhone error: ", error);
-          this.setState({ messageComfirm: "Mã xác thực không đúng" });
-        });
     } else {
       this.setState({
         messageComfirm: "Bạn cần phải nhập mã xác nhận",
@@ -128,14 +135,7 @@ class Signup extends PureComponent<Props, State> {
       account: { account: this.tmpPhone, password: this.passwordText },
     });
   };
-  verify = (ownerPhone = true) => {
-    // const { comfirmCode } = this.state;
-    if (!ownerPhone) {
-      this.otherPhoneVerify();
-    } else {
-      this.createAccount();
-    }
-  };
+
   phoneText: string;
   tmpPhone: string;
   passwordText: string;
@@ -152,7 +152,7 @@ class Signup extends PureComponent<Props, State> {
         firebase.auth().languageCode = "vi";
         await firebase
           .auth()
-          .verifyPhoneNumber(this.tmpPhone, 60, true)
+          .verifyPhoneNumber(this.tmpPhone, 60)
           .on(
             "state_changed",
             async (snapshot) => {
@@ -170,15 +170,24 @@ class Signup extends PureComponent<Props, State> {
                     },
                   );
                   break;
-                case firebase.auth.PhoneAuthState.ERROR: // or "error"
-                  console.log(error);
-                  if (error === "auth/unknown") {
+                case firebase.auth.PhoneAuthState.ERROR: {
+                  // or "error"
+                  const msgError = error.message;
+                  if (msgError.search("network") !== -1) {
                     this.setState({
                       message: "Bạn cần kết nối mạng",
                       isSignup: false,
                     });
                   }
+                  if (msgError.search("blocked") !== -1) {
+                    this.setState({
+                      message:
+                        "Chức năng đăng kí đang được bảo trì, mong bạn quay lại sau",
+                      isSignup: false,
+                    });
+                  }
                   break;
+                }
                 case firebase.auth.PhoneAuthState.AUTO_VERIFY_TIMEOUT: // or "timeout"
                   // TODO
                   break;
@@ -186,7 +195,7 @@ class Signup extends PureComponent<Props, State> {
                   console.log("auto");
                   // this.comfirmCode = code;
                   this.codeInput = code;
-                  this.verify(true);
+                  this.createAccount();
                   break;
                 default:
                   console.log(state);
@@ -317,8 +326,7 @@ class Signup extends PureComponent<Props, State> {
                   this.passwordText = text;
                 }}
                 style={style.input}
-                onFocus={(event) => {
-                  console.log(event.nativeEvent);
+                onFocus={() => {
                   this.setState(
                     {
                       message: "",
@@ -397,7 +405,7 @@ class Signup extends PureComponent<Props, State> {
             placeholder="Nhập mã vào đây ..."
             style={style.inputModal}
             underlineColorAndroid="transparent"
-            value={this.codeInput}
+            defaultValue={this.codeInput}
             onChangeText={(text) => {
               this.codeInput = text;
             }}
@@ -405,7 +413,7 @@ class Signup extends PureComponent<Props, State> {
               this.codeInput = "";
             }}
             keyboardType="numeric"
-            onSubmitEditing={this.verify}
+            onSubmitEditing={this.otherPhoneVerify}
           />
           {this.state.messageComfirm ? (
             <Custom.Text style={[style.txtModal, { color: "red" }]}>
@@ -414,14 +422,12 @@ class Signup extends PureComponent<Props, State> {
           ) : null}
           <TouchableOpacity
             style={style.btnModal}
-            onPress={!this.state.isComfirm ? this.verify : () => {}}
+            onPress={!this.state.isComfirm ? this.otherPhoneVerify : () => {}}
           >
             {this.state.isComfirm ? (
               <ActivityIndicator size="small" color={colors.white} />
             ) : (
-              <Custom.Text style={style.txtBtnModal} onPress={this.verify}>
-                Tiếp tục
-              </Custom.Text>
+              <Custom.Text style={style.txtBtnModal}>Tiếp tục</Custom.Text>
             )}
           </TouchableOpacity>
         </Custom.Modal>

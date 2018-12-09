@@ -31,7 +31,15 @@ const template = `<body>
     }
   </style>
   <table style="width: 60%; border: 1px solid grey" id="table1">
-    
+  <tr>
+  <th style="width: 100px" colspan="2">Thời gian</th>
+  <th rowspan="2">Người nói</th>
+  <th rowspan="2">Nội dung</th>
+</tr>
+<tr>
+  <th>Ngày</th>
+  <th>Giờ</th>
+</tr>
 `;
 
 export default template;

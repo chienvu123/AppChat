@@ -7,6 +7,7 @@ import SelectRoom from "./SelectRoom";
 import Doc from "./Document";
 import AddRoom from "./AddRoom";
 import AddDocument from "./AddDocument";
+import ListChange from "./ListChange";
 
 export default createStackNavigator(
   {
@@ -33,6 +34,9 @@ export default createStackNavigator(
     },
     AddDocument: {
       screen: AddDocument,
+    },
+    ListChange: {
+      screen: ListChange,
     },
   },
   {

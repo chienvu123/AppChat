@@ -6,7 +6,6 @@ import {
   Animated,
   ViewStyle,
 } from "react-native";
-import { colors } from "themes";
 import * as d from "utilities/Tranform.js";
 
 type Props = {
@@ -35,7 +34,7 @@ const style = StyleSheet.create({
     position: "absolute",
     alignItems: "center",
     justifyContent: "center",
-    top: 25 * d.ratioH,
+    top: 0,
     backgroundColor: "rgba(0,0,0,0.5)",
   },
 });

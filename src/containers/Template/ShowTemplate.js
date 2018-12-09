@@ -1,5 +1,14 @@
 import React, { PureComponent } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  Platform,
+  PermissionsAndroid,
+  ToastAndroid,
+} from "react-native";
 import Pdf from "react-native-pdf";
 import RNHTMLtoPDF from "react-native-html-to-pdf";
 import { Modal, Header } from "components/CustomComponent";
@@ -13,7 +22,61 @@ type Props = {
 const END = `  </table>
 </div>
 </body>`;
+const checkPermission = (callback = () => {}) => {
+  if (Platform.OS === "android" && Platform.Version >= 23) {
+    PermissionsAndroid.check("android.permission.READ_EXTERNAL_STORAGE").then(
+      (result) => {
+        if (result) {
+          callback();
+        } else {
+          PermissionsAndroid.requestMultiple([
+            "android.permission.READ_EXTERNAL_STORAGE",
+            "android.permission.WRITE_EXTERNAL_STORAGE",
+          ]).then(
+            (result1) => {
+              switch (result1["android.permission.WRITE_EXTERNAL_STORAGE"]) {
+                case PermissionsAndroid.RESULTS.GRANTED:
+                  callback();
+                  break;
 
+                case PermissionsAndroid.RESULTS.DENIED:
+                  checkPermission(callback);
+                  break;
+
+                case PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN:
+                  Alert.alert(
+                    "Xuất file báo cáo không thành công",
+                    'Vui cấp quyền truy cập để có ứng dụng có thể hoạt động. Vào "Cài đặt" của điện thoại để thực hiện', // eslint-disable-line
+                    [{ text: "Đã hiểu" }],
+                  );
+                  break;
+
+                default:
+                  break;
+              }
+            },
+            (err) => {
+              ToastAndroid.show(
+                "Xuất file báo cáo không thành công",
+                ToastAndroid.SHORT,
+              );
+              console.log("error: ", err);
+            },
+          );
+        }
+      },
+      (err) => {
+        ToastAndroid.show(
+          "Xuất file báo cáo không thành công",
+          ToastAndroid.SHORT,
+        );
+        console.log("error1: ", err);
+      },
+    );
+  } else {
+    callback();
+  }
+};
 export default class ShowTemplate extends PureComponent<Props> {
   constructor(props) {
     super(props);
@@ -25,7 +88,9 @@ export default class ShowTemplate extends PureComponent<Props> {
   }
 
   componentDidMount() {
-    this.modal.open();
+    checkPermission(() => {
+      this.modal.open();
+    });
   }
 
   export = async () => {
@@ -39,7 +104,7 @@ export default class ShowTemplate extends PureComponent<Props> {
                     <td class="time">${new Date(
                       item.createtime,
                     ).toLocaleString()}</td>
-                    <td class="name">${item.userName}</td>
+                    <td class="name">${item.user.name}</td>
                     <td class="content">${item.content}</td>
                   </tr>`;
           str += item1;
@@ -54,7 +119,7 @@ export default class ShowTemplate extends PureComponent<Props> {
                     <td class="time">${new Date(
                       item.createtime,
                     ).toLocaleTimeString()}</td>
-                    <td class="name">${item.userName}</td>
+                    <td class="name">${item.user.name}</td>
                     <td class="content">${item.content}</td>
                   </tr>`;
           str += item2;
@@ -70,7 +135,22 @@ export default class ShowTemplate extends PureComponent<Props> {
       };
       const filePath = await RNHTMLtoPDF.convert(options);
       console.log(filePath);
-      Alert.alert("Thông báo:", `lưu thành công, ${filePath}`);
+      Alert.alert(
+        "Thông báo:",
+        "Xuất file thành công, bạn có muốn chia sẻ không?",
+        [
+          {
+            text: "Có",
+            onPress: () => {},
+          },
+          {
+            text: "Không",
+            onPress: () => {
+              this.props.navigation.goBack();
+            },
+          },
+        ],
+      );
     } else {
       this.setState({ message: "Bạn không được để trống tên file" });
     }

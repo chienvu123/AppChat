@@ -57,12 +57,15 @@ class AddRoom extends PureComponent<Props> {
         status: -1,
         roomId,
       };
-      firebase
-        .firestore()
-        .collection("docs")
+      const path = firebase.firestore().collection("docs");
+      path
         .add(data)
         .then((value) => {
           this.roomId = value.id;
+          this.path = path.doc(value.id);
+        })
+        .catch((error) => {
+          console.log("initial room error: ", error);
         });
     } else {
       const path = firebase
@@ -78,6 +81,9 @@ class AddRoom extends PureComponent<Props> {
       "hardwareBackPress",
       this.backHandler,
     );
+  }
+  componentWillUnmount() {
+    this.backListen.remove();
   }
   backHandler = () => {
     const { isAdding } = this.state;
@@ -117,10 +123,7 @@ class AddRoom extends PureComponent<Props> {
         describle: this.describle,
         status: 0,
       };
-      firebase
-        .firestore()
-        .collection("docs")
-        .doc(this.roomId)
+      this.path
         .update(data)
         .then(
           () => {
@@ -165,7 +168,7 @@ class AddRoom extends PureComponent<Props> {
           if (index === 2) this.props.navigation.goBack();
         });
     } else {
-      Alert.alert("Lưu ý: ", "bạn chưa chỉnh sửa gì");
+      Alert.alert("Lưu ý: ", "Bạn chưa chỉnh sửa gì");
     }
   };
   check = () => {
@@ -181,14 +184,10 @@ class AddRoom extends PureComponent<Props> {
   };
   remove = () => {
     if (!this.param) {
-      firebase
-        .firestore()
-        .collection("docs")
-        .doc(this.roomId)
-        .delete();
+      this.path.delete();
     } else {
       this.path.update({
-        status: 0,
+        status: this.param.item.status,
       });
     }
   };

@@ -31,7 +31,6 @@ class Documents extends PureComponent<Props> {
     super(props);
     this.state = {
       data: [],
-      userData: [],
       isLoading: true,
       size: 0,
     };
@@ -46,18 +45,12 @@ class Documents extends PureComponent<Props> {
   }
 
   getData = () => {
-    console.log("roomkey: ", this.roomKey);
-    const path = firebase
-      .firestore()
-      .collection("contents")
-      .where("docId", "=", this.roomKey);
-    console.log("path: ", path);
     firebase
       .firestore()
+      .collection("docs")
+      .doc(this.roomKey)
       .collection("contents")
-      // .doc()
-      .where("docId", "==", this.roomKey)
-      // .orderBy("createtime")
+      .orderBy("createtime")
       .onSnapshot(
         (snapshot) => {
           console.log("snapshot: ", snapshot);
@@ -66,12 +59,11 @@ class Documents extends PureComponent<Props> {
           docs = docs.reverse();
           const data = [];
           const { size } = snapshot;
-          console.log(size);
           if (size !== 0) {
             docs.forEach(async (doc) => {
               const tmp = doc.data();
               const user = await UserModel.getUserById(tmp.userId);
-              data.push({ ...tmp, user });
+              data.push({ ...tmp, user, id: doc.id });
               if (data.length === size) {
                 this.setState({ data, isLoading: false, size }, () => {
                   console.log("data: ", this.state.data);
@@ -87,6 +79,7 @@ class Documents extends PureComponent<Props> {
         },
       );
   };
+  editDocument = () => {};
   randomCover = () => {
     const index = this.userProfile.coverDefault;
     return coverDefault[`anh${index}`];
@@ -120,16 +113,6 @@ class Documents extends PureComponent<Props> {
             this.modal.open();
           }}
         />
-        <View
-          style={{
-            width: "100%",
-            height: 56,
-            paddingHorizontal: "3%",
-            justifyContent: "center",
-            // elevation: 5,
-            backgroundColor: "white",
-          }}
-        />
         {/* eslint-disable */}
         {!isLoading ? (
           size > 0 ? (
@@ -149,6 +132,10 @@ class Documents extends PureComponent<Props> {
                     justifyContent: "center",
                     marginLeft: "5%",
                     marginTop: 7,
+                  }}
+                  onPress={() => {
+                    this.item = item;
+                    this.modal2.open();
                   }}
                 >
                   <Text style={{ fontSize: 12 }} numberOfLines={1}>
@@ -244,7 +231,7 @@ class Documents extends PureComponent<Props> {
               borderBottomWidth: 1,
             }}
             onPress={() => {
-              this.modal.close();
+              this.modal1.close();
               this.props.navigation.navigate("Home", {
                 roomId: this.roomId,
                 roomKey: this.roomKey,
@@ -260,7 +247,7 @@ class Documents extends PureComponent<Props> {
               marginLeft: 15,
             }}
             onPress={() => {
-              this.modal.close();
+              this.modal1.close();
               this.props.navigation.navigate("AddDocument", {
                 roomId: this.roomId,
                 roomKey: this.roomKey,
@@ -268,6 +255,55 @@ class Documents extends PureComponent<Props> {
             }}
           >
             <Text style={{ fontWeight: "bold" }}>Thêm tốc ký</Text>
+          </TouchableOpacity>
+        </Modal>
+        <Modal
+          ref={(node) => {
+            this.modal2 = node;
+          }}
+          style={{
+            width: "96%",
+            backgroundColor: "white",
+            height: 150,
+            borderRadius: 15,
+          }}
+        >
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              marginLeft: 15,
+              borderBottomColor: "grey",
+              borderBottomWidth: 1,
+            }}
+            onPress={() => {
+              this.modal2.close();
+              this.props.navigation.navigate("ListChange", {
+                type: "Document",
+                roomKey: this.roomKey,
+                item: this.item,
+              });
+            }}
+          >
+            <Text style={{ fontWeight: "bold" }}>Xem lịch sử chỉnh sửa</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              marginLeft: 15,
+            }}
+            onPress={() => {
+              this.modal.close();
+              this.props.navigation.navigate("AddDocument", {
+                isEdit: true,
+                roomKey: this.roomKey,
+                roomId: this.roomId,
+                item: this.item,
+              });
+            }}
+          >
+            <Text style={{ fontWeight: "bold" }}>Chỉnh sửa văn bản</Text>
           </TouchableOpacity>
         </Modal>
       </View>

@@ -10,7 +10,7 @@ import { colors } from "themes";
 import style from "./style";
 
 const url =
-  "https://graph.facebook.com/v3.1/me?fields=name,email,birthday,hometown,gender,picture&access_token";
+  "https://graph.facebook.com/v3.1/me?fields=name,email,birthday,hometown,gender,picture.type(large)&access_token";
 
 type Props = {
   navigation: Object,

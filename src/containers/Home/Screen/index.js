@@ -8,6 +8,7 @@ import {
   Alert,
   PermissionsAndroid,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import FilePickerManager from "react-native-file-picker";
 import RNFS from "react-native-fs";
@@ -24,7 +25,12 @@ type Props = {
 class Home extends PureComponent<Props> {
   constructor(props) {
     super(props);
-    this.state = { enableScroll: true, who: [], what: [], isSynch: false };
+    this.state = {
+      enableScroll: true,
+      who: [],
+      what: [],
+      isSynch: false,
+    };
     this.who = {};
     this.what = {};
     this.date = new Date();
@@ -146,15 +152,17 @@ class Home extends PureComponent<Props> {
         const dataWhat = this.state.what;
         const { length } = dataWhat;
         let index = 0;
-        dataWho.forEach((item) => {
+        dataWho.forEach((item, index1) => {
           const tmpData = {
             ...item,
-            content: dataWhat[index].content,
+            content: dataWhat[index1].content,
             status: 0, // false: chưa chỉnh sửa, true: đã chỉnh sửa
             docId: this.roomKey,
           };
           firebase
             .firestore()
+            .collection("docs")
+            .doc(this.roomKey)
             .collection("contents")
             .add(tmpData)
             .then(
@@ -309,9 +317,13 @@ class Home extends PureComponent<Props> {
                 }
               }}
             >
-              <Text style={{ fontWeight: "bold", color: colors.white }}>
-                Đồng bộ
-              </Text>
+              {!this.state.isSynch ? (
+                <Text style={{ fontWeight: "bold", color: colors.white }}>
+                  Đồng bộ
+                </Text>
+              ) : (
+                <ActivityIndicator size="small" color={colors.white} />
+              )}
             </TouchableOpacity>
           </View>
           {/* <View style={{ flex: 1 }}>
