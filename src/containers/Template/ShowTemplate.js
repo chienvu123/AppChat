@@ -9,7 +9,6 @@ import {
   PermissionsAndroid,
   ToastAndroid,
 } from "react-native";
-import Pdf from "react-native-pdf";
 import RNHTMLtoPDF from "react-native-html-to-pdf";
 import { Modal, Header } from "components/CustomComponent";
 import style from "./style";
@@ -133,24 +132,20 @@ export default class ShowTemplate extends PureComponent<Props> {
         directory: "docs",
         html: str,
       };
-      const filePath = await RNHTMLtoPDF.convert(options);
-      console.log(filePath);
-      Alert.alert(
-        "Thông báo:",
-        "Xuất file thành công, bạn có muốn chia sẻ không?",
-        [
-          {
-            text: "Có",
-            onPress: () => {},
+      const result = await RNHTMLtoPDF.convert(options);
+      let { filePath } = result;
+      if (Platform.OS === "android") {
+        filePath = `file://${filePath}`;
+      }
+      this.path = filePath;
+      Alert.alert("Thông báo:", "Xuất file thành công", [
+        {
+          text: "Quay về",
+          onPress: () => {
+            this.props.navigation.goBack();
           },
-          {
-            text: "Không",
-            onPress: () => {
-              this.props.navigation.goBack();
-            },
-          },
-        ],
-      );
+        },
+      ]);
     } else {
       this.setState({ message: "Bạn không được để trống tên file" });
     }

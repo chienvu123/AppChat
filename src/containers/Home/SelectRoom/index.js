@@ -20,7 +20,6 @@ import { getRooms } from "actions/rooms";
 import Room from "./room";
 
 type Props = {
-  getRooms: Function,
   navigation: Object,
 };
 
@@ -45,18 +44,24 @@ class SelectRoom extends PureComponent<Props> {
       .orderBy("createtime")
       .onSnapshot(
         (snapshot) => {
-          // console.log("home: ", snapshot.docs);
+          const userIdOwner = UserModel.user.id;
           const { size } = snapshot;
           let { docs } = snapshot;
           docs = docs.reverse();
           const data = [];
+          let index = 0;
           docs.forEach(async (doc) => {
             const tmp = doc.data();
-            const user = await UserModel.getUserById(tmp.userId);
-            tmp.user = user;
-            tmp["roomKey"] = doc.id; // eslint-disable-line
-            data.push(tmp);
-            if (data.length === size) {
+            if (!tmp.follow || tmp.follow[userIdOwner]) {
+              // nếu ko có follow thì mở cho tất cả
+              // nếu có follow thì kiểm tra xem có userId này hay ko
+              const user = await UserModel.getUserById(tmp.userId);
+              tmp.user = user;
+              tmp["roomKey"] = doc.id; // eslint-disable-line
+              data.push(tmp);
+            }
+            index++;
+            if (index === size) {
               this.setState({ data, isLoading: false });
             }
           });
@@ -107,7 +112,6 @@ class SelectRoom extends PureComponent<Props> {
                 navigation={this.props.navigation}
                 item={item}
                 onLongPress={(param) => {
-                  console.log("param: ", param);
                   this.param = param;
                   this.modal.open();
                 }}

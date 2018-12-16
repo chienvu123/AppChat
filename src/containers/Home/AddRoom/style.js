@@ -12,6 +12,8 @@ export default StyleSheet.create({
   },
   col1: {
     width: "50%",
+    color: "black",
+    fontWeight: "bold",
   },
   col2: {
     width: "50%",

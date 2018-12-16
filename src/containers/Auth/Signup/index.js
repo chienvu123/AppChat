@@ -60,7 +60,10 @@ class Signup extends PureComponent<Props, State> {
             })
             .catch((error) => {
               console.log("otherPhone error: ", error);
-              this.setState({ messageComfirm: "Mã xác thực không đúng" });
+              this.setState({
+                messageComfirm: "Mã xác thực không đúng",
+                isComfirm: false,
+              });
             });
         },
       );

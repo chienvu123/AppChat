@@ -16,6 +16,7 @@ import * as types from "constants/actionTypes";
 
 /* eslint-disable */
 class Instance {
+  user: User = {};
   arrUser: User[] = [];
   setUser = (
     user: Object,
@@ -33,6 +34,7 @@ class Instance {
     };
     try {
       console.log("user: ", user);
+      this.user = user;
       if (token) {
         AsyncStorage.setItem("tokenLogin", token);
       }
